@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AlphaHound — Platform Documentation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#080C10;--bg2:#0D1117;--bg3:#141B24;--border:#1E2A38;
+    --amber:#F59E0B;--amber2:#FCD34D;--blue:#38BDF8;--green:#34D399;
+    --red:#F87171;--orange:#FB923C;--purple:#A78BFA;
+    --t1:#FFFFFF;--t2:#C2CCD9;--t3:#6B7A8D;
+    --mono:'DM Mono','JetBrains Mono',monospace;--sans:'Syne',sans-serif;
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:var(--bg);color:var(--t1);font-family:var(--mono);font-size:15px;line-height:1.75;display:flex;min-height:100vh}
+  nav{width:240px;min-width:240px;background:var(--bg2);border-right:1px solid var(--border);padding:32px 0;position:fixed;top:0;left:0;bottom:0;overflow-y:auto;z-index:100}
+  .nav-logo{padding:0 24px 28px;border-bottom:1px solid var(--border);margin-bottom:16px}
+  .nav-logo h1{font-family:var(--sans);font-size:18px;font-weight:800;letter-spacing:-0.02em}
+  .nav-logo h1 span{color:var(--amber)}
+  .nav-logo p{color:var(--t3);font-size:10px;margin-top:3px;letter-spacing:0.15em;text-transform:uppercase}
+  .nav-section{padding:6px 24px 2px;color:var(--t3);font-size:9px;letter-spacing:0.18em;text-transform:uppercase;margin-top:12px}
+  nav a{display:block;padding:6px 24px;color:var(--t2);text-decoration:none;font-size:11px;transition:all 0.15s;border-left:2px solid transparent}
+  nav a:hover{color:var(--t1);background:var(--bg3);border-left-color:var(--amber)}
+  nav a.active{color:var(--amber);border-left-color:var(--amber);background:rgba(245,158,11,0.05)}
+  main{margin-left:240px;flex:1;padding:0;max-width:1440px}
+  .hero{background:linear-gradient(135deg,#080C10 0%,#0D1B2A 50%,#080C10 100%);border-bottom:1px solid var(--border);padding:64px 64px 48px;position:relative;overflow:hidden}
+  .hero::before{content:'';position:absolute;top:-80px;right:-80px;width:400px;height:400px;background:radial-gradient(circle,rgba(245,158,11,0.06) 0%,transparent 70%);pointer-events:none}
+  .hero-tag{font-size:10px;letter-spacing:0.2em;color:var(--amber);text-transform:uppercase;margin-bottom:16px}
+  .hero h1{font-family:var(--sans);font-size:48px;font-weight:800;line-height:1.1;letter-spacing:-0.03em}
+  .hero h1 span{color:var(--amber)}
+  .hero-sub{color:var(--t2);font-size:14px;margin-top:16px;max-width:560px;line-height:1.6}
+  .hero-stats{display:flex;gap:32px;margin-top:40px;padding-top:32px;border-top:1px solid var(--border);flex-wrap:wrap}
+  .stat{display:flex;flex-direction:column;gap:4px}
+  .stat-val{font-family:var(--sans);font-size:24px;font-weight:800;color:var(--amber)}
+  .stat-label{font-size:10px;color:var(--t3);letter-spacing:0.12em;text-transform:uppercase}
+  section{padding:56px 64px;border-bottom:1px solid var(--border)}
+  section:last-child{border-bottom:none}
+  .section-tag{font-size:9px;letter-spacing:0.2em;color:var(--amber);text-transform:uppercase;margin-bottom:10px}
+  h2{font-family:var(--sans);font-size:28px;font-weight:800;letter-spacing:-0.02em;margin-bottom:8px}
+  h3{font-family:var(--sans);font-size:16px;font-weight:700;color:var(--t1);margin:32px 0 12px}
+  h3:first-of-type{margin-top:24px}
+  .section-intro{color:var(--t2);font-size:15px;line-height:1.75;margin-bottom:28px;max-width:760px}
+  .pipeline{display:flex;align-items:center;gap:0;margin:28px 0;overflow-x:auto;padding-bottom:8px}
+  .pipe-step{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px 16px;min-width:110px;text-align:center;flex-shrink:0}
+  .pipe-step .ps-num{font-size:9px;color:var(--t3);margin-bottom:4px}
+  .pipe-step .ps-name{font-size:11px;font-weight:700;color:var(--t1)}
+  .pipe-step .ps-desc{font-size:9px;color:var(--t2);margin-top:3px}
+  .pipe-step.hl{border-color:var(--amber);background:rgba(245,158,11,0.06)}
+  .pipe-step.hl .ps-name{color:var(--amber)}
+  .pipe-arrow{color:var(--t3);font-size:16px;padding:0 4px;flex-shrink:0}
+  .tbl-wrap{overflow-x:auto;margin:16px 0;border-radius:8px;border:1px solid var(--border)}
+  table{width:100%;border-collapse:collapse}
+  thead tr{background:var(--bg3);border-bottom:1px solid var(--border)}
+  th{padding:11px 15px;text-align:left;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:var(--t3);font-weight:600;white-space:nowrap}
+  td{padding:11px 15px;font-size:13px;color:var(--t2);border-bottom:1px solid rgba(30,42,56,0.6);vertical-align:top}
+  tr:last-child td{border-bottom:none}
+  tr:hover td{background:rgba(255,255,255,0.01)}
+  td:first-child{color:var(--t1);font-weight:500}
+  td code{background:rgba(56,189,248,0.1);color:var(--blue);padding:1px 5px;border-radius:3px;font-size:12px}
+  pre{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:20px 24px;overflow-x:auto;margin:16px 0;font-size:13px;line-height:1.7;color:var(--t2)}
+  .c{color:var(--t3)}.kw{color:var(--purple)}.st{color:var(--green)}.nm{color:var(--amber)}.op{color:var(--blue)}
+  .badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;margin-right:4px}
+  .ba{background:rgba(245,158,11,0.15);color:var(--amber);border:1px solid rgba(245,158,11,0.3)}
+  .bb{background:rgba(56,189,248,0.12);color:var(--blue);border:1px solid rgba(56,189,248,0.25)}
+  .bg{background:rgba(52,211,153,0.12);color:var(--green);border:1px solid rgba(52,211,153,0.25)}
+  .br{background:rgba(248,113,113,0.12);color:var(--red);border:1px solid rgba(248,113,113,0.25)}
+  .bp{background:rgba(167,139,250,0.12);color:var(--purple);border:1px solid rgba(167,139,250,0.25)}
+  .bz{background:rgba(74,85,104,0.3);color:var(--t2);border:1px solid var(--border)}
+  .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;margin:20px 0}
+  .card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:20px;transition:border-color 0.2s}
+  .card:hover{border-color:var(--t3)}
+  .card-icon{font-size:22px;margin-bottom:10px}
+  .card-title{font-family:var(--sans);font-size:14px;font-weight:700;color:var(--t1);margin-bottom:6px}
+  .card-body{font-size:13px;color:var(--t2);line-height:1.65}
+  .pillar-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;margin:20px 0}
+  .pillar{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:18px;border-top:3px solid var(--amber)}
+  .pillar .p-icon{font-size:20px;margin-bottom:8px}
+  .pillar .p-name{font-family:var(--sans);font-size:13px;font-weight:700;color:var(--t1);margin-bottom:6px}
+  .pillar .p-desc{font-size:12px;color:var(--t2);line-height:1.65}
+  .pillar .p-src{font-size:9px;color:var(--t3);margin-top:8px;letter-spacing:0.05em}
+  .formula{background:var(--bg3);border:1px solid var(--border);border-left:3px solid var(--amber);border-radius:0 8px 8px 0;padding:16px 20px;margin:16px 0;font-size:13px}
+  .formula .f-label{font-size:9px;color:var(--amber);letter-spacing:0.15em;text-transform:uppercase;margin-bottom:8px}
+  .formula .f-eq{color:var(--t1)}
+  .formula .f-note{color:var(--t2);font-size:12px;margin-top:6px}
+  .alert-box{background:rgba(248,113,113,0.06);border:1px solid rgba(248,113,113,0.25);border-radius:8px;padding:15px 18px;margin:16px 0;font-size:13px;color:var(--t2)}
+  .alert-box strong{color:var(--red)}
+  .info-box{background:rgba(56,189,248,0.06);border:1px solid rgba(56,189,248,0.2);border-radius:8px;padding:15px 18px;margin:16px 0;font-size:13px;color:var(--t2)}
+  .info-box strong{color:var(--blue)}
+  .ok-box{background:rgba(52,211,153,0.06);border:1px solid rgba(52,211,153,0.22);border-radius:8px;padding:15px 18px;margin:16px 0;font-size:13px;color:var(--t2)}
+  .ok-box strong{color:var(--green)}
+  .src-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:16px 0}
+  .src-card{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px}
+  .src-name{font-size:13px;font-weight:700;color:var(--t1);margin-bottom:4px}
+  .src-class{font-size:9px;color:var(--t3);margin-bottom:8px}
+  .src-weight{display:flex;align-items:center;gap:8px}
+  .src-bar{height:3px;background:var(--border);border-radius:2px;flex:1}
+  .src-fill{height:100%;border-radius:2px}
+  .ds-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin:22px 0}
+  .ds-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:22px 24px;border-left:3px solid var(--amber);transition:border-color 0.2s}
+  .ds-card:hover{border-color:var(--t3);border-left-color:var(--amber)}
+  .ds-head{display:flex;align-items:baseline;gap:10px;margin-bottom:4px;flex-wrap:wrap}
+  .ds-name{font-family:var(--sans);font-size:17px;font-weight:700;color:var(--t1)}
+  .ds-feeds{font-size:11px;color:var(--amber);letter-spacing:0.04em;margin-bottom:14px}
+  .ds-desc{font-size:13px;color:var(--t2);line-height:1.65;margin-bottom:14px}
+  .ds-fields{font-size:9px;color:var(--t3);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:7px}
+  .ds-chips{display:flex;flex-wrap:wrap;gap:6px}
+  .ds-chip{font-size:11px;color:var(--blue);background:rgba(56,189,248,0.09);border:1px solid rgba(56,189,248,0.2);border-radius:5px;padding:3px 9px}
+  .gate-checks{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin:16px 0}
+  .gc{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px 12px;text-align:center}
+  .gc-icon{font-size:18px;margin-bottom:6px}
+  .gc-name{font-size:10px;font-weight:700;color:var(--t1)}
+  .gc-desc{font-size:9px;color:var(--t3);margin-top:4px;line-height:1.4}
+  .schema-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:16px 0}
+  .schema-card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:14px}
+  .sc-table{font-size:11px;font-weight:700;color:var(--amber);margin-bottom:4px}
+  .sc-writer{font-size:9px;color:var(--t3);margin-bottom:6px}
+  .sc-desc{font-size:10px;color:var(--t2);line-height:1.5}
+  ::-webkit-scrollbar{width:6px;height:6px}
+  ::-webkit-scrollbar-track{background:var(--bg)}
+  ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+  ::-webkit-scrollbar-thumb:hover{background:var(--t3)}
+  @media(max-width:900px){nav{display:none}main{margin-left:0}.hero{padding:40px 24px 32px}section{padding:40px 24px}.src-grid{grid-template-columns:repeat(2,1fr)}.ds-grid{grid-template-columns:1fr}.gate-checks{grid-template-columns:repeat(3,1fr)}.schema-grid{grid-template-columns:repeat(2,1fr)}.hero h1{font-size:32px}}
+</style>
+</head>
+<body>
+<nav>
+  <div class="nav-logo"><h1>ALPHA<span>/HOUND</span></h1><p>Platform Documentation</p></div>
+  <div class="nav-section">Overview</div>
+  <a href="#overview">What is AlphaHound?</a>
+  <a href="#sources">Data Sources</a>
+  <a href="#goal">The Goal</a>
+  <div class="nav-section">Signal Engine</div>
+  <a href="#pipeline">Data Pipeline</a>
+  <a href="#pillars">The Five Pillars</a>
+  <a href="#scoring">Convergence Score</a>
+  <a href="#catalysts">Catalyst Window</a>
+  <div class="nav-section">Execution</div>
+  <a href="#structures">Options Structures</a>
+  <a href="#macro">Macro Gate</a>
+  <a href="#guardrails">Guardrails</a>
+  <a href="#exits">Exit Logic</a>
+  <div class="nav-section">Infrastructure</div>
+  <a href="#scheduler">Scheduler</a>
+  <a href="#database">Database</a>
+  <a href="#api">API Endpoints</a>
+  <a href="#access">Dashboard Access</a>
+  <div class="nav-section">Operations</div>
+  <a href="#validation">Hit Rate Gate</a>
+  <a href="#known-issues">Known Issues</a>
+  <a href="#roadmap">Roadmap</a>
+</nav>
+<main>
+
+<div class="hero">
+  <div class="hero-tag">v0.1.0 · Windows Server 2022 · Azure PostgreSQL · Alpaca Paper Options</div>
+  <h1>ALPHA<span>/HOUND</span><br>Platform Docs</h1>
+  <p class="hero-sub">A multi-pillar convergence engine for automated options trading. When congressional flow, options sweeps, government contracts, social velocity and binary catalysts all point the same way at once, AlphaHound places a defined-risk options spread — fully automated.</p>
+  <div class="hero-stats">
+    <div class="stat"><div class="stat-val">5</div><div class="stat-label">Scoring Pillars</div></div>
+    <div class="stat"><div class="stat-val">965</div><div class="stat-label">Tickers Scanned</div></div>
+    <div class="stat"><div class="stat-val">15m</div><div class="stat-label">Pipeline Cycle</div></div>
+    <div class="stat"><div class="stat-val">3</div><div class="stat-label">Max Open Spreads</div></div>
+    <div class="stat"><div class="stat-val">RISK_ON</div><div class="stat-label">Trade Gate</div></div>
+  </div>
+</div>
+
+<section id="overview">
+  <div class="section-tag">Overview</div>
+  <h2>What is AlphaHound?</h2>
+  <p class="section-intro">AlphaHound is a fully automated options trading engine. It ingests real market-intelligence sources every 15 minutes, scores each ticker across five independent pillars, and when enough of them <em>agree</em> on the same name and direction, it places a defined-risk options spread on an Alpaca paper account — without human intervention. The thesis is convergence: a single signal is noise, but stacked agreement across independent sources is an edge that surfaces before the move.</p>
+  <div class="cards">
+    <div class="card"><div class="card-icon">🎯</div><div class="card-title">Multi-Pillar Convergence</div><div class="card-body">Five pillars score every ticker. A SUPER SIGNAL fires only when the composite reaches 5.0+ with 4 or more pillars agreeing on a clear, non-neutral direction.</div></div>
+    <div class="card"><div class="card-icon">🧩</div><div class="card-title">Defined-Risk Options</div><div class="card-body">Trades bull and bear call spreads — capped downside by construction. No naked options, no short stock, no margin calls. Max loss is the debit paid.</div></div>
+    <div class="card"><div class="card-icon">🗓️</div><div class="card-title">Catalyst-Aware</div><div class="card-body">Signals are timed against a 7–60 day catalyst window — earnings, contract awards, binary events — so the trade has a reason to resolve before expiry.</div></div>
+    <div class="card"><div class="card-icon">🛡️</div><div class="card-title">Hard Guardrails</div><div class="card-body">Max 3 open spreads, max 2 contracts each, automatic stop-loss, time-based exits, and a portfolio-health halt that stops new entries when positions bleed.</div></div>
+    <div class="card"><div class="card-icon">🌗</div><div class="card-title">Macro Gate</div><div class="card-body">New positions open only when the market regime reads RISK_ON. NEUTRAL and RISK_OFF both block entry — standing down is a deliberate, correct outcome.</div></div>
+    <div class="card"><div class="card-icon">📊</div><div class="card-title">Hit Rate Validation</div><div class="card-body">Every trade resolves to a win/loss. The hit-rate gate must clear a threshold across enough resolved trades before any live capital is ever deployed.</div></div>
+  </div>
+</section>
+
+<section id="sources">
+  <div class="section-tag">The Inputs</div>
+  <h2>Data Sources</h2>
+  <p class="section-intro">Everything AlphaHound knows comes from these feeds. Each is pulled every cycle, normalized into a common format, and routed to the pillar it informs. The pillars are only as good as what flows in here — so this is the foundation of the whole engine. Below: what each source provides, the specific data it returns, and which pillar it feeds.</p>
+  <div class="ds-grid">
+
+    <div class="ds-card">
+      <div class="ds-head"><span class="ds-name">Unusual Whales</span><span class="badge bg">ON</span></div>
+      <div class="ds-feeds">→ feeds the Unusual Options Sweeps pillar</div>
+      <div class="ds-desc">Real-time options-flow alerts that flag large, aggressive orders — the kind of positioning that often reflects informed conviction before it shows up in price. The engine reads direction (calls vs puts) and the scale of the bet to judge how strongly a name is being accumulated.</div>
+      <div class="ds-fields">Data returned</div>
+      <div class="ds-chips"><span class="ds-chip">contract type (call/put)</span><span class="ds-chip">premium</span><span class="ds-chip">volume</span><span class="ds-chip">open interest</span><span class="ds-chip">volume/OI ratio</span><span class="ds-chip">unusual score</span><span class="ds-chip">expiry</span><span class="ds-chip">sentiment</span></div>
+    </div>
+
+    <div class="ds-card">
+      <div class="ds-head"><span class="ds-name">Quiver Quant</span><span class="badge bg">ON</span></div>
+      <div class="ds-feeds">→ feeds the Congressional Flow &amp; Government Contracts pillars</div>
+      <div class="ds-desc">Two distinct signals from one source. Disclosed congressional trades reveal what lawmakers are buying and selling — and how those trades have historically performed against the market. Federal contract awards act as a forward revenue signal: a fresh government contract is hard public evidence of future business.</div>
+      <div class="ds-fields">Data returned</div>
+      <div class="ds-chips"><span class="ds-chip">representative</span><span class="ds-chip">transaction (buy/sell)</span><span class="ds-chip">amount range</span><span class="ds-chip">party</span><span class="ds-chip">chamber</span><span class="ds-chip">trade date</span><span class="ds-chip">excess return vs SPY</span><span class="ds-chip">contract awards</span></div>
+    </div>
+
+    <div class="ds-card">
+      <div class="ds-head"><span class="ds-name">ApeWisdom</span><span class="badge bg">ON</span></div>
+      <div class="ds-feeds">→ feeds the Social Velocity pillar</div>
+      <div class="ds-desc">Aggregated retail-forum mention data. The engine cares about the <em>rate of change</em> in chatter, not the raw level — a sudden acceleration in how often a ticker is being discussed often precedes a retail-driven move. Velocity, not volume, is the signal.</div>
+      <div class="ds-fields">Data returned</div>
+      <div class="ds-chips"><span class="ds-chip">mention count</span><span class="ds-chip">mention velocity</span><span class="ds-chip">rank change</span><span class="ds-chip">upvotes</span><span class="ds-chip">ticker</span></div>
+    </div>
+
+    <div class="ds-card">
+      <div class="ds-head"><span class="ds-name">Earnings Calendar &amp; Kalshi</span><span class="badge bg">ON</span></div>
+      <div class="ds-feeds">→ feeds the Binary Catalyst Events pillar</div>
+      <div class="ds-desc">The catalyst layer. The earnings calendar supplies known upcoming report dates — the most common binary event — while Kalshi prediction markets price the odds of other discrete outcomes. Together they tell the engine <em>when</em> a name is likely to resolve, which is how the catalyst window is set.</div>
+      <div class="ds-fields">Data returned</div>
+      <div class="ds-chips"><span class="ds-chip">earnings date</span><span class="ds-chip">fiscal quarter</span><span class="ds-chip">EPS estimate</span><span class="ds-chip">actual / beat</span><span class="ds-chip">market-implied odds</span><span class="ds-chip">event date</span></div>
+    </div>
+
+    <div class="ds-card">
+      <div class="ds-head"><span class="ds-name">Finnhub</span><span class="badge bg">ON</span></div>
+      <div class="ds-feeds">→ news wire (sentiment context)</div>
+      <div class="ds-desc">Company news headlines, scored for sentiment by the FinBERT model. News provides the narrative backdrop against which the other pillars are read — it helps confirm or contextualize why a name might be moving. (Finnhub's social-sentiment endpoint is intentionally not used; news only.)</div>
+      <div class="ds-fields">Data returned</div>
+      <div class="ds-chips"><span class="ds-chip">headline</span><span class="ds-chip">source</span><span class="ds-chip">published time</span><span class="ds-chip">FinBERT polarity</span><span class="ds-chip">confidence</span></div>
+    </div>
+
+    <div class="ds-card">
+      <div class="ds-head"><span class="ds-name">Substack</span><span class="badge bg">ON</span></div>
+      <div class="ds-feeds">→ analyst-curated commentary</div>
+      <div class="ds-desc">Curated analyst and independent-research commentary. A lower-volume but higher-signal text source that adds qualitative depth — the kind of considered take that a headline feed misses. Scored for sentiment alongside the news wire.</div>
+      <div class="ds-fields">Data returned</div>
+      <div class="ds-chips"><span class="ds-chip">post title</span><span class="ds-chip">author</span><span class="ds-chip">body text</span><span class="ds-chip">published time</span><span class="ds-chip">FinBERT polarity</span></div>
+    </div>
+
+    <div class="ds-card">
+      <div class="ds-head"><span class="ds-name">Massive &amp; Yahoo Finance</span><span class="badge bg">ON</span></div>
+      <div class="ds-feeds">→ price &amp; technical context</div>
+      <div class="ds-desc">The price backbone. Daily OHLCV history and live snapshots underpin everything downstream — the technical context, the macro gate's read on the broad market, and the relative-strength comparison of each name against SPY. Without clean price data, none of the pillars can be acted on.</div>
+      <div class="ds-fields">Data returned</div>
+      <div class="ds-chips"><span class="ds-chip">open / high / low / close</span><span class="ds-chip">volume</span><span class="ds-chip">1d / 5d change</span><span class="ds-chip">change vs SPY</span><span class="ds-chip">latest price</span></div>
+    </div>
+
+  </div>
+  <div class="alert-box"><strong>Disabled by design:</strong> three sources are intentionally off — EDGAR (too much filing noise to be useful), StockTwits (blocked by Cloudflare), and Alpha Vantage (its free tier caps at 25 calls/day, far too few for a 15-minute cycle). They are deliberately excluded, not broken.</div>
+</section>
+
+<section id="goal">
+  <div class="section-tag">Mission</div>
+  <h2>The Goal</h2>
+  <p class="section-intro">Prove a genuine, repeatable edge on a paper account first — then, and only then, deploy real capital. Every layer of the system is built around defined risk and disciplined entry: the engine would rather stand down than force a marginal trade.</p>
+  <div class="ok-box"><strong>Discipline over speed:</strong> Defined-risk spreads, a hard 3-position cap, and a RISK_ON-only macro gate exist to make ruin structurally difficult. The paper hit-rate gate is treated as a wall, not a formality — a clean, statistically meaningful track record has to come before any live capital.</div>
+  <div class="formula">
+    <div class="f-label">Core Thesis</div>
+    <div class="f-eq">Independent sources converging on one name + direction → a tradeable edge before the market fully reprices</div>
+    <div class="f-note">Congress buying, options desks sweeping calls, a fresh contract award, social velocity spiking, and a known catalyst ahead — when they line up, that agreement is the signal.</div>
+  </div>
+</section>
+
+<section id="pipeline">
+  <div class="section-tag">Architecture</div>
+  <h2>Data Pipeline</h2>
+  <p class="section-intro">Every 15 minutes the full pipeline runs automatically via Windows Task Scheduler. Each step is tracked in the <code>pipeline_runs</code> table with timing and row counts. Ingest runs 6 adapters in parallel (~60–90s vs ~340s sequential); scoring auto-detects backlog and switches to catchup mode when needed.</p>
+  <div class="pipeline">
+    <div class="pipe-step"><div class="ps-num">01</div><div class="ps-name">Ingest</div><div class="ps-desc">Adapters (parallel)</div></div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step"><div class="ps-num">02</div><div class="ps-name">raw_posts</div><div class="ps-desc">Normalized</div></div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step"><div class="ps-num">03</div><div class="ps-name">Compute</div><div class="ps-desc">Velocity / momentum</div></div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step"><div class="ps-num">04</div><div class="ps-name">FinBERT</div><div class="ps-desc">Sentiment scored</div></div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step hl"><div class="ps-num">05</div><div class="ps-name">Convergence</div><div class="ps-desc">Pillar scoring</div></div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step"><div class="ps-num">06</div><div class="ps-name">Structure</div><div class="ps-desc">Spread recommender</div></div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step"><div class="ps-num">07</div><div class="ps-name">Monitor</div><div class="ps-desc">Stop / time exits</div></div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step hl"><div class="ps-num">08</div><div class="ps-name">Execute</div><div class="ps-desc">Alpaca spreads</div></div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step"><div class="ps-num">09</div><div class="ps-name">Health</div><div class="ps-desc">Self-diagnosis</div></div>
+  </div>
+  <div class="tbl-wrap"><table>
+    <thead><tr><th>#</th><th>Step</th><th>Purpose</th><th>Freq</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>ingest</td><td>Pull all active adapters in parallel (6 workers)</td><td>5–15m</td></tr>
+      <tr><td>2</td><td>compute-all</td><td>Mention velocity + momentum signals</td><td>15m</td></tr>
+      <tr><td>3</td><td>score-smart</td><td>FinBERT retail + news scoring, backlog-aware (catchup vs burst)</td><td>15m</td></tr>
+      <tr><td>4</td><td>convergence-scan</td><td>Five-pillar scoring across ~965 tickers, emits super signals</td><td>15m</td></tr>
+      <tr><td>5</td><td>options-monitor --close</td><td>Fires stop-loss + time-based exits on open spreads</td><td>15m</td></tr>
+      <tr><td>6</td><td>options-execute</td><td>Places new spreads when RISK_ON and &lt; 3 positions open</td><td>15m</td></tr>
+      <tr><td>7</td><td>health-check</td><td>Self-diagnosis, writes assessment + health JSON</td><td>15m</td></tr>
+    </tbody>
+  </table></div>
+  <div class="info-box"><strong>FinBERT thread cap:</strong> The transformer is pinned to 2 threads (<code>OMP_NUM_THREADS</code>, <code>MKL_NUM_THREADS</code>, <code>torch.set_num_threads()</code>) so it doesn't saturate the server CPU mid-cycle. Moving it to Azure Functions is on the roadmap.</div>
+  <div class="alert-box"><strong>Lock file:</strong> <code>logs\ingest.lock</code> prevents overlapping pipeline runs and is removed on success or failure. If a run is killed mid-cycle and the lock sticks, clear it with <code>Remove-Item C:\alphahound_project\logs\ingest.lock -Force</code>.</div>
+</section>
+
+<section id="pillars">
+  <div class="section-tag">Core Algorithm</div>
+  <h2>The Five Pillars</h2>
+  <p class="section-intro">Each ticker is scored independently on five pillars. A pillar "fires" when its evidence is strong enough to contribute. The pillars are intentionally diverse — they pick up different kinds of informed activity, so agreement between them is meaningful.</p>
+  <div class="pillar-grid">
+    <div class="pillar"><div class="p-icon">🏛️</div><div class="p-name">Congressional Flow</div><div class="p-desc">Disclosed trades by members of Congress — direction, size, and recency.</div><div class="p-src">src: Quiver Quant</div></div>
+    <div class="pillar"><div class="p-icon">📐</div><div class="p-name">Unusual Options Sweeps</div><div class="p-desc">Large, aggressive options orders signalling positioned conviction.</div><div class="p-src">src: Unusual Whales</div></div>
+    <div class="pillar"><div class="p-icon">📄</div><div class="p-name">Government Contracts</div><div class="p-desc">Fresh federal contract awards as a forward revenue signal.</div><div class="p-src">src: Quiver Quant</div></div>
+    <div class="pillar"><div class="p-icon">📈</div><div class="p-name">Social Velocity</div><div class="p-desc">Rate-of-change in retail mention volume — acceleration, not level.</div><div class="p-src">src: ApeWisdom</div></div>
+    <div class="pillar"><div class="p-icon">⏱️</div><div class="p-name">Binary Catalyst Events</div><div class="p-desc">Known upcoming events (earnings, decisions) that force a resolution.</div><div class="p-src">src: Earnings / Kalshi</div></div>
+  </div>
+</section>
+
+<section id="scoring">
+  <div class="section-tag">Core Algorithm</div>
+  <h2>The Convergence Score</h2>
+  <p class="section-intro">The convergence scorer combines the pillars into a single composite score and a direction for each ticker. A SUPER SIGNAL — the only thing eligible for execution — requires all three conditions below to hold at once.</p>
+  <div class="formula">
+    <div class="f-label">Super Signal Criteria</div>
+    <div class="f-eq">composite_score ≥ 5.0  AND  pillars_fired ≥ 4  AND  direction ≠ NEUTRAL</div>
+    <div class="f-note">A high score from a single dominant pillar is not enough — breadth (4+ pillars) is required so the trade rests on genuine agreement, not one loud source.</div>
+  </div>
+  <div class="tbl-wrap"><table>
+    <thead><tr><th>Composite Score</th><th>Classification</th><th>Action</th></tr></thead>
+    <tbody>
+      <tr><td>&lt; 2.5</td><td>Background</td><td>Ignored — not surfaced</td></tr>
+      <tr><td>2.5 – 4.9</td><td>Developing / Watch</td><td>Shown on the watch list, no execution</td></tr>
+      <tr><td>≥ 5.0 (with 4+ pillars)</td><td>SUPER SIGNAL</td><td>Eligible to execute — pending macro gate &amp; guardrails</td></tr>
+    </tbody>
+  </table></div>
+  <div class="info-box"><strong>High-conviction, no-catalyst path:</strong> A super signal can also fire without a catalyst in-window if the score is strong (≥ 5.0), at least 4 pillars agree, and direction is non-neutral. These are capped to a shorter max hold.</div>
+  <div class="info-box"><strong>Freshness:</strong> The scorer uses a pure NOT EXISTS check and signals carry their actual <code>computed_at</code> timestamp, so the executor always evaluates genuinely fresh signals rather than re-processing or stale ones.</div>
+</section>
+
+<section id="catalysts">
+  <div class="section-tag">Timing</div>
+  <h2>Catalyst Window</h2>
+  <p class="section-intro">Signals are timed against a catalyst window so a spread has a concrete reason to resolve before it expires. Trades without a catalyst in-window are held to a shorter limit.</p>
+  <div class="tbl-wrap"><table>
+    <thead><tr><th>Parameter</th><th>Value</th><th>Meaning</th></tr></thead>
+    <tbody>
+      <tr><td>Catalyst window</td><td>7 – 60 days</td><td>A binary event must fall in this range to count as catalyst-backed</td></tr>
+      <tr><td>Catalyst exit</td><td>3 days after event</td><td>Close shortly after the catalyst fires — the thesis has played out</td></tr>
+      <tr><td>No-catalyst max hold</td><td>14 days</td><td>High-conviction no-catalyst trades are time-boxed tighter</td></tr>
+      <tr><td>Expiry guard</td><td>5 DTE</td><td>Avoid holding into the final days of an option's life</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="structures">
+  <div class="section-tag">Execution</div>
+  <h2>Options Structures</h2>
+  <p class="section-intro">AlphaHound trades vertical call spreads — defined-risk by construction. Direction determines whether it builds a bull or bear spread; the structure recommender sizes strikes from the signal and available chain.</p>
+  <div class="tbl-wrap"><table>
+    <thead><tr><th>Direction</th><th>Structure</th><th>Risk Profile</th></tr></thead>
+    <tbody>
+      <tr><td><span class="badge bg">LONG</span></td><td>Bull call spread (buy lower strike, sell higher)</td><td>Max loss = net debit · Max gain = strike width − debit</td></tr>
+      <tr><td><span class="badge br">SHORT</span></td><td>Bear call spread (sell lower strike, buy higher)</td><td>Defined risk · Capped gain · No naked short exposure</td></tr>
+      <tr><td><span class="badge bz">NEUTRAL</span></td><td>No trade</td><td>Direction must be non-neutral to execute</td></tr>
+    </tbody>
+  </table></div>
+  <div class="alert-box"><strong>Golden rules — options execution:</strong> Alpaca leg format uses <code>sell</code> as the side with a separate <code>position_intent</code> field (not <code>sell_to_open</code> as the side). Options market orders are only accepted during market hours (6:30 AM – 1:00 PM PT), so stop-loss closes are queued for the open. Duplicate prevention cross-checks live Alpaca positions, not just the DB.</div>
+  <div class="info-box"><strong>Not always executable:</strong> Some names are flagged NOT EXECUTABLE when the listed options chain is too short for the current price (e.g. a stock trading well above the highest listed strike). These show on the dashboard but are skipped with a reason.</div>
+</section>
+
+<section id="macro">
+  <div class="section-tag">Risk Management</div>
+  <h2>Macro Gate</h2>
+  <p class="section-intro">Before any new position, the engine reads the overall market regime from a basket of global instruments. The gate is strict: only RISK_ON permits new entries.</p>
+  <div class="tbl-wrap"><table>
+    <thead><tr><th>Verdict</th><th>Condition</th><th>Effect on New Entries</th></tr></thead>
+    <tbody>
+      <tr><td><span class="badge bg">RISK_ON</span></td><td>Macro score ≥ +0.20</td><td>New spreads permitted</td></tr>
+      <tr><td><span class="badge ba">NEUTRAL</span></td><td>Between thresholds</td><td><strong>Blocked</strong> — no new entries</td></tr>
+      <tr><td><span class="badge br">RISK_OFF</span></td><td>Macro score ≤ −0.10</td><td><strong>Blocked</strong> — no new entries</td></tr>
+    </tbody>
+  </table></div>
+  <div class="formula">
+    <div class="f-label">SPY 5-Day Override</div>
+    <div class="f-eq">if SPY 5-day return &lt; −2%  →  force RISK_OFF</div>
+    <div class="f-note">A sharp short-term drawdown in the broad market overrides the basket and stands the engine down regardless of the composite macro score.</div>
+  </div>
+  <div class="info-box"><strong>Note:</strong> NEUTRAL means no new trades — only RISK_ON allows entry. Standing down in an uncertain regime is intentional, not a missed opportunity. Market hours are determined by a time-based ET check rather than the broker's open/closed flag, which can report stale values.</div>
+</section>
+
+<section id="guardrails">
+  <div class="section-tag">Risk Management</div>
+  <h2>Guardrails</h2>
+  <p class="section-intro">Hard limits bound the risk on every trade and across the portfolio. These are not advisory — they block execution.</p>
+  <div class="tbl-wrap"><table>
+    <thead><tr><th>Rule</th><th>Value</th></tr></thead>
+    <tbody>
+      <tr><td>Max open spreads</td><td>3 (hard limit)</td></tr>
+      <tr><td>Max contracts per spread</td><td>2</td></tr>
+      <tr><td>Stop loss</td><td>−80%</td></tr>
+      <tr><td>Gain target</td><td>+50%</td></tr>
+      <tr><td>Expiry guard</td><td>5 DTE</td></tr>
+      <tr><td>Catalyst exit</td><td>3 days after the event</td></tr>
+      <tr><td>Time limit (no catalyst)</td><td>14 days max hold</td></tr>
+      <tr><td>Macro gate</td><td>RISK_ON only</td></tr>
+      <tr><td>SPY 5d trend override</td><td>&lt; −2% forces RISK_OFF</td></tr>
+      <tr><td>Portfolio health halt</td><td>2+ positions &gt;50% down = no new entries</td></tr>
+    </tbody>
+  </table></div>
+  <div class="ok-box"><strong>Why these exist:</strong> Each rule caps a distinct failure mode — the 3-position limit and contracts cap bound total exposure, the stop-loss and time exits bound any single trade, and the portfolio-health halt stops the engine from adding risk into a book that's already bleeding. Together they make a runaway sequence of trades structurally impossible.</div>
+</section>
+
+<section id="exits">
+  <div class="section-tag">Risk Management</div>
+  <h2>Exit Logic</h2>
+  <p class="section-intro">The options monitor checks every open spread each cycle against the exit triggers below. Closes use the Alpaca positions endpoint directly, queued for market open when needed.</p>
+  <div class="tbl-wrap"><table>
+    <thead><tr><th>Trigger</th><th>Condition</th><th>Action</th></tr></thead>
+    <tbody>
+      <tr><td>Stop loss</td><td>Spread value down 80% from entry</td><td>Close the position (queued for open if after hours)</td></tr>
+      <tr><td>Gain target</td><td>Spread up 50% from entry</td><td>Take profit</td></tr>
+      <tr><td>Catalyst exit</td><td>3 days after the catalyst event fired</td><td>Close — thesis has resolved</td></tr>
+      <tr><td>Time limit</td><td>14 days held (no-catalyst trades)</td><td>Close on the clock</td></tr>
+      <tr><td>Expiry guard</td><td>Within 5 days of expiry</td><td>Close to avoid end-of-life risk</td></tr>
+    </tbody>
+  </table></div>
+  <div class="info-box"><strong>Implementation note:</strong> Stop-loss closes use the Alpaca position-close endpoint (<code>DELETE /v2/positions/{symbol}</code>) rather than placing a counter-order, so an exit is a single atomic action.</div>
+</section>
+
+<section id="scheduler">
+  <div class="section-tag">Operations</div>
+  <h2>Scheduled Tasks &amp; Session Protocol</h2>
+  <p class="section-intro">The pipeline runs on Windows Task Scheduler. Every session starts by reading the assessment first — never run manual scripts before reading the current assessment.</p>
+  <h3>Session Start Protocol</h3>
+  <pre><code><span class="c"># 1. Read the handoff first, every session</span>
+docs\HANDOFF.md
+
+<span class="c"># 2. One call gives the full system picture</span>
+GET localhost:8080/api/assessment
+
+<span class="c"># 3. Assessment service writes this every 15 min</span>
+docs\status\assessment.json</code></pre>
+  <h3>Key Diagnostic Scripts</h3>
+  <pre><code><span class="c"># Quick status + full audit</span>
+<span class="nm">.\.venv\Scripts\python.exe</span> status.py
+<span class="nm">.\.venv\Scripts\python.exe</span> system_audit.py
+
+<span class="c"># Auto-detection rules incl. watermark drift auto-fix</span>
+<span class="nm">.\.venv\Scripts\python.exe</span> diagnostics.py
+
+<span class="c"># Interactive SQL shortcuts: signals, pipeline, backlog,</span>
+<span class="c"># adapters, positions, options, congress, hitrate ...</span>
+<span class="nm">.\.venv\Scripts\python.exe</span> db.py
+
+<span class="c"># Manual parallel ingest (6 workers)</span>
+<span class="nm">.\.venv\Scripts\python.exe</span> ingest_parallel.py
+
+<span class="c"># Overnight global context</span>
+<span class="nm">.\.venv\Scripts\python.exe</span> global_markets.py</code></pre>
+  <div class="info-box"><strong>PowerShell notes:</strong> use <code>npx.cmd</code> not <code>npx</code>; use the <code>&amp;</code> operator to run scripts by path; avoid <code>*</code> in inline <code>python -c</code> commands (glob interference) — save as a <code>.py</code> script instead. Log files live at <code>logs\[type]_YYYY-MM-DD.log</code>; tailing 40–80 lines is usually enough.</div>
+</section>
+
+<section id="database">
+  <div class="section-tag">Infrastructure</div>
+  <h2>Database Tables</h2>
+  <p class="section-intro">Azure PostgreSQL (TimescaleDB). Connection string in <code>.env</code> as <code>DATABASE_URL</code>. Connection pooling via psycopg_pool (min 2 / max 5).</p>
+  <div class="schema-grid">
+    <div class="schema-card"><div class="sc-table">entities</div><div class="sc-writer">EntityResolver</div><div class="sc-desc">Canonical symbol registry. Unique on (module_id, symbol, kind). In-memory cache.</div></div>
+    <div class="schema-card"><div class="sc-table">raw_posts</div><div class="sc-writer">All text adapters</div><div class="sc-desc">Normalized content. Deduped via NOT EXISTS. Author SHA-256 hashed.</div></div>
+    <div class="schema-card"><div class="sc-table">sentiment_scores</div><div class="sc-writer">FinBERT + rule scorers</div><div class="sc-desc">Polarity + confidence per post per entity. Backlog-aware incremental scoring.</div></div>
+    <div class="schema-card"><div class="sc-table">convergence_signals</div><div class="sc-writer">convergence_scorer</div><div class="sc-desc">Composite score, pillars fired, direction, catalyst, pillar_breakdown, narrative.</div></div>
+    <div class="schema-card"><div class="sc-table">options_trade_log</div><div class="sc-writer">options_executor</div><div class="sc-desc">Placed spreads: structure, contracts, debit, catalyst, status, P&amp;L, order IDs.</div></div>
+    <div class="schema-card"><div class="sc-table">options_flow</div><div class="sc-writer">Unusual Whales adapter</div><div class="sc-desc">Sweep alerts: premium, call/put, expiry, unusual score. Feeds the options pillar.</div></div>
+    <div class="schema-card"><div class="sc-table">institutional_positions</div><div class="sc-writer">Quiver adapter</div><div class="sc-desc">Congressional + institutional filings. Feeds the congress and contract pillars.</div></div>
+    <div class="schema-card"><div class="sc-table">price_snapshots</div><div class="sc-writer">Price adapters</div><div class="sc-desc">Latest price + 1d/5d change + vs SPY per entity.</div></div>
+    <div class="schema-card"><div class="sc-table">price_daily</div><div class="sc-writer">Massive History</div><div class="sc-desc">Daily OHLCV. Feeds technical context and the macro gate.</div></div>
+    <div class="schema-card"><div class="sc-table">earnings_calendar</div><div class="sc-writer">Earnings adapter</div><div class="sc-desc">Upcoming earnings dates. Drives the catalyst window.</div></div>
+    <div class="schema-card"><div class="sc-table">hit_rate</div><div class="sc-writer">hit-rate resolver</div><div class="sc-desc">Rolling accuracy windows. The go/no-go gate for live capital.</div></div>
+    <div class="schema-card"><div class="sc-table">pipeline_runs</div><div class="sc-writer">pipeline wrapper</div><div class="sc-desc">Every step tracked: timing, rows, error. Backs the health monitor.</div></div>
+  </div>
+  <div class="alert-box"><strong>Golden rule — Quiver writes:</strong> Never set <code>published_at = trade_date</code> for Quiver; it causes a permanent ON CONFLICT dedup. Use midnight UTC instead.</div>
+</section>
+
+<section id="api">
+  <div class="section-tag">Dashboard</div>
+  <h2>API Endpoints</h2>
+  <p class="section-intro">FastAPI backend at <code>localhost:8080</code>. TTL dict cache — most endpoints cached 30–600 seconds to reduce DB load.</p>
+  <div class="tbl-wrap"><table>
+    <thead><tr><th>Endpoint</th><th>Cache</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>GET /api/assessment</code></td><td>30s</td><td>Single-call system picture — read this first every session.</td></tr>
+      <tr><td><code>GET /api/convergence</code></td><td>60s</td><td>Live super signals + developing watch list with pillar breakdowns + macro verdict.</td></tr>
+      <tr><td><code>GET /api/convergence/history</code></td><td>—</td><td>Convergence signal history for the Trades / History view.</td></tr>
+      <tr><td><code>GET /api/convergence/structure</code></td><td>—</td><td>Recommended options structure for a ticker's current signal.</td></tr>
+      <tr><td><code>GET /api/macro</code></td><td>120s</td><td>Macro verdict (RISK_ON / NEUTRAL / RISK_OFF), score, contributors.</td></tr>
+      <tr><td><code>GET /api/positions</code></td><td>—</td><td>Live Alpaca open spreads: P&amp;L, days held, pillars, catalyst context.</td></tr>
+      <tr><td><code>GET /api/options-trades</code></td><td>30s</td><td>The options trade log — placed spreads, status, P&amp;L, wins/losses.</td></tr>
+      <tr><td><code>GET /api/options-flow</code></td><td>—</td><td>Recent Unusual Whales sweeps: premium, call/put, expiry.</td></tr>
+      <tr><td><code>GET /api/congress</code></td><td>300s</td><td>Congressional trades: representative, ticker, amount, party, chamber.</td></tr>
+      <tr><td><code>GET /api/earnings</code></td><td>600s</td><td>Upcoming earnings/catalyst calendar driving the catalyst window.</td></tr>
+      <tr><td><code>GET /api/hit-rate</code></td><td>300s</td><td>Rolling signal accuracy + counts logged vs resolved.</td></tr>
+      <tr><td><code>GET /api/health</code></td><td>60s</td><td>System health report — DB, pipeline, adapters, signals, account, diagnostics.</td></tr>
+      <tr><td><code>GET /api/pipeline</code></td><td>30s</td><td>Per-step status, timing, rows, errors + scoring backlog/mode.</td></tr>
+      <tr><td><code>GET /api/execution-log</code></td><td>30s</td><td>Why the executor fired or skipped each signal today.</td></tr>
+      <tr><td><code>GET /api/summary</code></td><td>60s</td><td>KPI counts: alerts, posts 24h, entities active, engine status.</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="access">
+  <div class="section-tag">Dashboard</div>
+  <h2>Dashboard Access</h2>
+  <p class="section-intro">The dashboard sits behind a single shared access code. The gate validates the code server-side and issues a signed, expiring session cookie; unauthenticated page loads redirect to the login screen and unauthenticated API calls return 401.</p>
+  <div class="tbl-wrap"><table>
+    <thead><tr><th>Setting</th><th>Default</th><th>Override</th></tr></thead>
+    <tbody>
+      <tr><td>Access code</td><td>set in <code>auth.py</code></td><td><code>DASHBOARD_ACCESS_CODE</code> in .env</td></tr>
+      <tr><td>Session secret</td><td>built-in fallback</td><td><code>DASHBOARD_SESSION_SECRET</code> in .env</td></tr>
+      <tr><td>Session lifetime</td><td>168h (7 days)</td><td><code>DASHBOARD_SESSION_HOURS</code> in .env</td></tr>
+    </tbody>
+  </table></div>
+  <div class="info-box"><strong>First-run walkthrough:</strong> On first login per device, a walkthrough opens automatically — concept first (pillars, convergence, gates), then a tour of the dashboard tabs. Replay anytime via <code>window.AHWalkthrough.open()</code>.</div>
+  <div class="alert-box"><strong>Security note:</strong> A short numeric access code is fine on the internal VM over localhost. If the dashboard is ever exposed beyond the box, raise the code length via <code>DASHBOARD_ACCESS_CODE</code>, set a strong <code>DASHBOARD_SESSION_SECRET</code>, and serve over HTTPS (enable the <code>secure</code> cookie flag in <code>auth.py</code>).</div>
+</section>
+
+<section id="validation">
+  <div class="section-tag">Go-Live Gate</div>
+  <h2>Hit Rate Validation</h2>
+  <p class="section-intro">Everything runs on the Alpaca paper account until the hit-rate gate clears across enough resolved trades. This is the go/no-go wall before real capital is ever committed.</p>
+  <div class="tbl-wrap"><table>
+    <thead><tr><th>Hit Rate</th><th>Decision</th><th>Next Step</th></tr></thead>
+    <tbody>
+      <tr><td>≥ 60%</td><td><span class="badge bg">GO LIVE</span></td><td>Deploy real capital with conservative sizing</td></tr>
+      <tr><td>55% – 60%</td><td><span class="badge ba">CAUTIOUS GO</span></td><td>Go live at reduced size, scale as more trades resolve</td></tr>
+      <tr><td>50% – 55%</td><td><span class="badge bp">EXTEND PAPER</span></td><td>Continue paper, diagnose weak pillars</td></tr>
+      <tr><td>&lt; 50%</td><td><span class="badge br">STOP</span></td><td>No edge. No live capital. Diagnose and rebuild.</td></tr>
+    </tbody>
+  </table></div>
+  <div class="alert-box"><strong>Statistical significance:</strong> A high hit rate on a handful of trades means nothing. The gate only counts once enough trades have resolved to be statistically meaningful — breadth of evidence matters more than any single streak.</div>
+</section>
+
+<section id="known-issues">
+  <div class="section-tag">Engineering</div>
+  <h2>Known Issues</h2>
+  <div class="tbl-wrap"><table>
+    <thead><tr><th>Issue</th><th>Impact</th><th>Status</th></tr></thead>
+    <tbody>
+      <tr><td>MU flagged NOT EXECUTABLE</td><td>Listed options chain maxes below current stock price; needs a different expiry</td><td><span class="badge ba">Known</span></td></tr>
+      <tr><td>unusual_whales 0 fetched during market hours</td><td>Adapter sometimes returns empty; health monitor flags it but doesn't yet name the cause (auth vs empty vs quiet)</td><td><span class="badge ba">Monitor</span></td></tr>
+      <tr><td>Diagnostics don't distinguish 0-fetch causes</td><td>"Adapter fetching zero posts" doesn't separate disabled / empty-200 / auth-fail</td><td><span class="badge bz">Sprint 12</span></td></tr>
+      <tr><td>Thread pool shutdown warnings each cycle</td><td>Cosmetic "couldn't stop pool-1-worker" messages. No functional impact.</td><td><span class="badge ba">Cosmetic</span></td></tr>
+      <tr><td>Direction balance</td><td>No rule yet preventing an all-LONG book; a SHORT-presence requirement is planned</td><td><span class="badge bz">Sprint 12</span></td></tr>
+      <tr><td>Strike estimation</td><td>Uses Black-Scholes estimate rather than live IV from the Alpaca chain</td><td><span class="badge bz">Sprint 12</span></td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="roadmap">
+  <div class="section-tag">What's Next</div>
+  <h2>Roadmap</h2>
+  <div class="tbl-wrap"><table>
+    <thead><tr><th>Sprint</th><th>Status</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td>0–10</td><td><span class="badge bg">Complete</span></td><td>DB, parallel ingest, FinBERT, OHLCV, options flow, congressional + contract pillars, convergence scorer, macro gate, options spread execution, monitor + exits, health/assessment self-diagnosis</td></tr>
+      <tr><td>11</td><td><span class="badge bg">Complete</span></td><td>Multi-pillar convergence engine · pillar scorer · catalyst calendar engine · options structure recommender · UI trade-transparency rebuild · hit-rate resolver</td></tr>
+      <tr><td>12</td><td><span class="badge bz">Planned</span></td><td>Azure Functions for FinBERT · email/Slack stop-loss alerts · direction-balance rule (require a SHORT before all-LONG) · live IV from Alpaca chain · MU chain fix · richer 0-fetch diagnostics</td></tr>
+      <tr><td>Live</td><td><span class="badge bz">Gated</span></td><td>Real capital — only after the hit-rate gate clears on enough resolved trades</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+</main>
+<script>
+  const sections = document.querySelectorAll('section[id]');
+  const links = document.querySelectorAll('nav a');
+  function updateActive() {
+    let cur = '';
+    sections.forEach(s => { if (window.scrollY >= s.offsetTop - 100) cur = s.id; });
+    links.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + cur));
+  }
+  window.addEventListener('scroll', updateActive, {passive:true});
+  updateActive();
+</script>
+</body>
+</html>

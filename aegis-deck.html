@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>B.O.S. — Brand Operating System by AEGIS</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Cormorant+Garamond:ital,wght@0,300;1,300&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#07080b;
+  --bg2:#0b0d12;
+  --card:#12151e;
+  --card2:#181c28;
+  --border:rgba(201,168,76,0.18);
+  --borderb:rgba(201,168,76,0.5);
+  --gold:#c9a84c;
+  --goldb:#f0d070;
+  --glow:rgba(201,168,76,0.07);
+  --white:#f0f2f6;
+  --soft:#cdd3dc;
+  --muted:#8a94a4;
+  --faint:#40495a;
+  --green:#3dba7a;
+  --red:#e04545;
+  --cyan:#00c8f0;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--bg)}
+body{font-family:'Inter',sans-serif;color:var(--white)}
+
+/* ── ENGINE ── */
+.deck{width:100vw;height:100vh;position:relative;overflow:hidden}
+.slide{
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;justify-content:center;
+  padding:64px 96px 110px;
+  opacity:0;pointer-events:none;
+  transition:opacity 0.4s ease,transform 0.4s ease;
+  transform:translateY(18px);
+  overflow:hidden;
+}
+.slide.active{opacity:1;pointer-events:all;transform:translateY(0)}
+.slide.out{opacity:0;transform:translateY(-18px)}
+
+/* ── TOP BAR ── */
+.topbar{position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,var(--gold),var(--goldb) 50%,transparent)}
+
+/* ── NAV ── */
+.nav{
+  position:fixed;bottom:22px;left:50%;transform:translateX(-50%);
+  display:flex;align-items:center;gap:14px;z-index:200;
+  background:rgba(10,12,17,0.97);backdrop-filter:blur(20px);
+  border:1px solid var(--border);padding:10px 22px;
+}
+.nbtn{background:none;border:none;color:var(--soft);cursor:pointer;font-family:'Inter',sans-serif;font-size:11px;letter-spacing:2px;text-transform:uppercase;padding:4px 10px;transition:color 0.2s}
+.nbtn:hover{color:var(--gold)}
+.ctr{font-size:11px;letter-spacing:3px;color:var(--muted);min-width:54px;text-align:center}
+.dots{display:flex;gap:5px;align-items:center}
+.dot{width:5px;height:5px;border-radius:50%;background:var(--faint);transition:all 0.3s;cursor:pointer}
+.dot.on{background:var(--gold);box-shadow:0 0 8px var(--gold);width:18px;border-radius:3px}
+
+/* ── TYPE ── */
+.ey{font-size:11px;letter-spacing:4px;text-transform:uppercase;color:var(--gold);margin-bottom:14px;display:flex;align-items:center;gap:10px}
+.ey::before{content:'';width:26px;height:1px;background:var(--gold);flex-shrink:0}
+.h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(76px,11vw,150px);line-height:0.88;letter-spacing:4px;background:linear-gradient(130deg,#fff 0%,var(--goldb) 45%,var(--gold) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:18px}
+.h2{font-family:'Bebas Neue',sans-serif;font-size:clamp(48px,6.5vw,82px);letter-spacing:3px;line-height:0.92;color:var(--white);margin-bottom:12px}
+.h2 .g{background:linear-gradient(90deg,var(--goldb),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.h3{font-family:'Bebas Neue',sans-serif;font-size:clamp(28px,3.5vw,48px);letter-spacing:2px;color:var(--white);margin-bottom:10px}
+.italic{font-family:'Cormorant Garamond',serif;font-size:clamp(19px,2.2vw,28px);font-style:italic;font-weight:300;color:var(--goldb);opacity:0.9;margin-bottom:16px;line-height:1.4}
+.lead{font-size:clamp(15px,1.5vw,19px);line-height:1.85;color:var(--soft)}
+.lead strong{color:var(--white);font-weight:600}
+.div{width:44px;height:2px;background:linear-gradient(90deg,var(--gold),transparent);margin:16px 0}
+.pq{font-family:'Cormorant Garamond',serif;font-size:clamp(18px,2.2vw,26px);font-style:italic;font-weight:300;color:var(--white);line-height:1.55;border-left:3px solid var(--gold);padding:2px 0 2px 22px;max-width:800px}
+
+/* ── CARDS ── */
+.card{background:var(--card);border:1px solid var(--border);border-top:2px solid var(--gold);padding:24px 26px;transition:all 0.25s}
+.card:hover{background:var(--card2);border-color:var(--borderb)}
+.ctag{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--gold);margin-bottom:9px;font-weight:500}
+.ctitle{font-size:clamp(16px,1.5vw,20px);font-weight:600;color:var(--white);margin-bottom:9px;line-height:1.3}
+.cbody{font-size:clamp(14px,1.25vw,16px);line-height:1.8;color:var(--soft)}
+.cbody strong{color:var(--white);font-weight:600}
+.cnum{font-family:'Bebas Neue',sans-serif;font-size:38px;color:rgba(201,168,76,0.25);display:block;margin-bottom:5px}
+
+/* ── GRIDS ── */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.g21{display:grid;grid-template-columns:1.15fr 1fr;gap:28px;align-items:start}
+
+/* ── CALLOUT ── */
+.callout{background:var(--glow);border:1px solid var(--borderb);border-left:3px solid var(--gold);padding:16px 22px;font-size:clamp(14px,1.3vw,17px);color:var(--white);line-height:1.75}
+.callout strong{color:var(--goldb)}
+.warn{background:rgba(224,69,69,0.06);border:1px solid rgba(224,69,69,0.28);border-left:3px solid var(--red);padding:16px 22px;font-size:clamp(14px,1.3vw,17px);color:var(--soft);line-height:1.75}
+.warn strong{color:#ff7575}
+
+/* ── BULLETS ── */
+.blist{display:flex;flex-direction:column;gap:11px;margin-top:12px}
+.bi{font-size:clamp(14px,1.3vw,17px);color:var(--soft);line-height:1.7;padding-left:20px;position:relative}
+.bi::before{content:'▸';color:var(--gold);position:absolute;left:0;top:1px;font-size:11px;line-height:1.8}
+.bi strong{color:var(--white);font-weight:600}
+
+/* ── STATS ── */
+.sn{font-family:'Bebas Neue',sans-serif;font-size:clamp(40px,5.5vw,68px);letter-spacing:2px;line-height:1;background:linear-gradient(135deg,var(--goldb),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.sl{font-size:clamp(10px,0.9vw,12px);letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-top:4px;line-height:1.5}
+
+/* ── TABLE ── */
+.tbl{width:100%;border-collapse:collapse;font-size:clamp(13px,1.1vw,15px)}
+.tbl thead tr{border-bottom:1px solid var(--borderb)}
+.tbl th{text-align:left;font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--gold);padding:9px 12px;font-weight:400}
+.tbl td{padding:11px 12px;border-bottom:1px solid rgba(255,255,255,0.05);color:var(--soft);vertical-align:middle;line-height:1.5}
+.tbl td:first-child{color:var(--white);font-weight:600}
+.tbl tr:last-child td{border-bottom:none}
+.tbl .gd{color:var(--gold);font-weight:600}
+.tbl .gr{color:var(--green)}
+.tbl .ar td{background:rgba(201,168,76,0.06)}
+.tbl .ar td:first-child{color:var(--goldb)}
+
+/* ── MODULE GRID ── */
+.mgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px}
+.mc{background:var(--card);border:1px solid var(--border);border-top:2px solid rgba(201,168,76,0.38);padding:18px 20px;transition:all 0.25s}
+.mc:hover{background:var(--card2);border-color:var(--borderb)}
+.mn{font-family:'Bebas Neue',sans-serif;font-size:28px;color:rgba(201,168,76,0.28);display:block;margin-bottom:4px}
+.mname{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin-bottom:7px;font-weight:500}
+.mdesc{font-size:clamp(12px,1.1vw,14px);color:var(--soft);line-height:1.65}
+
+/* ── DASHBOARD ITEM ── */
+.dboard{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:14px}
+.di{background:var(--card);border:1px solid var(--border);border-top:2px solid rgba(201,168,76,0.4);padding:18px 16px;transition:all 0.25s}
+.di:hover{background:var(--card2);border-color:var(--borderb)}
+.di-icon{font-size:24px;margin-bottom:8px;display:block}
+.di-name{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin-bottom:6px;font-weight:500}
+.di-desc{font-size:clamp(12px,1.1vw,14px);color:var(--soft);line-height:1.6}
+
+/* ── TALENT GRID ── */
+.tgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px}
+.ti{background:var(--card);border:1px solid var(--border);padding:16px 18px;display:flex;align-items:center;gap:14px;transition:all 0.25s}
+.ti:hover{border-color:var(--borderb);background:var(--card2)}
+.ti-num{font-family:'Bebas Neue',sans-serif;font-size:32px;color:rgba(201,168,76,0.3);flex-shrink:0;width:36px}
+.ti-body{}
+.ti-name{font-size:clamp(14px,1.3vw,16px);font-weight:600;color:var(--white);margin-bottom:3px}
+.ti-desc{font-size:clamp(11px,1vw,13px);color:var(--muted);line-height:1.5}
+
+/* ── BUCKET CARDS ── */
+.bucket{background:var(--card);border:1px solid var(--border);border-top:3px solid var(--gold);padding:32px 30px}
+.bucket.b2{border-top-color:var(--cyan)}
+.btitle{font-family:'Bebas Neue',sans-serif;font-size:clamp(28px,3.5vw,46px);letter-spacing:2px;margin-bottom:6px}
+.bsub{font-size:clamp(13px,1.2vw,15px);color:var(--muted);margin-bottom:18px;letter-spacing:1px;text-transform:uppercase}
+.btag{display:inline-block;font-size:10px;letter-spacing:2px;text-transform:uppercase;padding:4px 10px;border:1px solid var(--borderb);color:var(--gold);margin:3px 3px 3px 0}
+.btag.b2{border-color:rgba(0,200,240,0.4);color:var(--cyan)}
+
+/* ── WYWS ── */
+.wyws{background:linear-gradient(135deg,rgba(201,168,76,0.06),rgba(0,0,0,0));border:1px solid var(--borderb);padding:20px 24px;margin-top:10px}
+
+/* ── ANIMS ── */
+.slide.active .a0{animation:up 0.5s ease both}
+.slide.active .a1{animation:up 0.5s 0.07s ease both}
+.slide.active .a2{animation:up 0.5s 0.14s ease both}
+.slide.active .a3{animation:up 0.5s 0.21s ease both}
+.slide.active .a4{animation:up 0.5s 0.28s ease both}
+.slide.active .a5{animation:up 0.5s 0.35s ease both}
+@keyframes up{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── BACKGROUNDS ── */
+.slide{background:var(--bg)}
+#s1{background:radial-gradient(ellipse 65% 55% at 80% 30%,rgba(201,168,76,0.08) 0%,transparent 60%),var(--bg)}
+#s3,#s5,#s7,#s9,#s11{background:var(--bg2)}
+#s11{background:radial-gradient(ellipse 80% 65% at 50% 50%,rgba(201,168,76,0.08) 0%,transparent 65%),var(--bg)}
+body::after{content:'';position:fixed;inset:0;pointer-events:none;opacity:0.018;z-index:999;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+</style>
+</head>
+<body>
+<div class="deck" id="deck">
+
+<!-- ═══════════════════════════════
+     S1 — HERO
+═══════════════════════════════ -->
+<div class="slide active" id="s1">
+  <div class="topbar"></div>
+  <div class="a0" style="font-size:11px;letter-spacing:4px;text-transform:uppercase;color:var(--muted);margin-bottom:10px">Powered by AEGIS AI · Confidential · 2026</div>
+  <div class="h1 a1">B.O.S.</div>
+  <div style="font-family:'Bebas Neue',sans-serif;font-size:clamp(22px,3vw,38px);letter-spacing:4px;color:var(--gold);margin-bottom:16px;margin-top:-8px" class="a2">Brand Operating System</div>
+  <div class="italic a3" style="font-size:clamp(18px,2.2vw,26px)">The AI-powered command center for celebrities,<br>athletes, musicians, and content creators.</div>
+  <p class="lead a4" style="max-width:680px;margin-bottom:22px">B.O.S. is the first AI-native platform built to <strong>protect, grow, and operate</strong> the personal brand of the world's most high-profile talent — in real time, from one unified command center.</p>
+  <div class="div a4"></div>
+  <div class="pq a5">"Managing an empire without B.O.S. is like running a Fortune 500 with no operating system. You're just hoping nothing breaks."</div>
+  <div style="margin-top:28px;font-size:12px;letter-spacing:2px;text-transform:uppercase;color:var(--faint)" class="a5">An AEGIS AI Company</div>
+</div>
+
+<!-- ═══════════════════════════════
+     S2 — WHAT IS B.O.S.
+═══════════════════════════════ -->
+<div class="slide" id="s2">
+  <div class="topbar"></div>
+  <div class="ey a0">What Is B.O.S.</div>
+  <div class="h2 a1">One platform.<br><span class="g">Everything in one place.</span></div>
+  <div class="g21 a2">
+    <div>
+      <p class="lead" style="margin-bottom:18px">B.O.S. — Brand Operating System — is AEGIS's proprietary platform. A <strong>centralized AI command center</strong> that brings together every dimension of a talent's brand, business, and team into a single, intelligent workspace.</p>
+      <div class="callout" style="margin-bottom:16px"><strong>Think of it this way:</strong> Salesforce runs your sales operation. SAP runs your supply chain. <strong>B.O.S. runs your personal brand empire.</strong></div>
+      <div class="blist">
+        <div class="bi">It is an <strong>operating system</strong> — not a tool, not a dashboard, not a data aggregator</div>
+        <div class="bi">It is <strong>AI-native</strong> — every alert, recommendation, and action is powered by proprietary AEGIS models</div>
+        <div class="bi">It is <strong>action-oriented</strong> — it doesn't show you data and walk away, it tells you what to do and when</div>
+        <div class="bi">It is <strong>centralized</strong> — one login for the talent and every member of their team</div>
+        <div class="bi">It is <strong>domain-specific</strong> — built exclusively for entertainment, sports, and creator brand dynamics</div>
+      </div>
+    </div>
+    <div>
+      <div class="card" style="margin-bottom:12px">
+        <div class="ctag">The Company Behind It</div>
+        <div class="ctitle">AEGIS AI</div>
+        <div class="cbody"><strong>AEGIS</strong> is the AI technology company. <strong>B.O.S.</strong> is the platform it powers. AEGIS builds, trains, and maintains the proprietary AI models that make B.O.S. the most intelligent brand management system ever built for talent.</div>
+      </div>
+      <div class="warn">
+        <strong>What B.O.S. is NOT:</strong><br>
+        Not a PR agency · Not a social scheduler · Not a data aggregator · Not a replacement for the team · Not a generic monitoring tool
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════
+     S3 — THE PAIN POINTS
+═══════════════════════════════ -->
+<div class="slide" id="s3">
+  <div class="topbar"></div>
+  <div class="ey a0">The Pain Points</div>
+  <div class="h2 a1">What keeps elite talent<br><span class="g">exposed every day.</span></div>
+  <div class="g3 a2" style="margin-top:14px">
+    <div class="card">
+      <div class="ctag">⚡ Pain 01</div>
+      <div class="ctitle">Crisis Moves at Machine Speed</div>
+      <div class="cbody">One post, one clip — <strong>$10M–$50M in brand value can evaporate in under 4 hours.</strong> PR firms respond in hours. The internet responds in seconds. The gap is where careers end.</div>
+    </div>
+    <div class="card">
+      <div class="ctag">🔀 Pain 02</div>
+      <div class="ctitle">Every Advisor in a Silo</div>
+      <div class="cbody">Agent, manager, publicist, attorney, business manager — <strong>five people, five information sets, zero shared intelligence.</strong> Coordination failures are not the exception. They are the norm.</div>
+    </div>
+    <div class="card">
+      <div class="ctag">💸 Pain 03</div>
+      <div class="ctitle">Deals Expire Unseen</div>
+      <div class="cbody">The right brand deal at the right moment is worth <strong>3–5x more than the same deal 6 months later.</strong> Human teams cannot scan the market continuously. The best opportunities are missed in the gap between meetings.</div>
+    </div>
+    <div class="card">
+      <div class="ctag">🛡️ Pain 04</div>
+      <div class="ctitle">Zero Real Brand Security</div>
+      <div class="cbody">Deepfakes, AI-generated content, coordinated attacks, unauthorized likeness use — <strong>daily threats in 2026 that no current platform is built to detect.</strong> Talent finds out when it's already viral.</div>
+    </div>
+    <div class="card">
+      <div class="ctag">📉 Pain 05</div>
+      <div class="ctitle">No Long-Term Strategy</div>
+      <div class="cbody">Most talent has no coherent long-arc brand narrative. <strong>Short-term decisions compound into a decade-long legacy</strong> that nobody is consciously building. The legacy gets shaped by accident, not by design.</div>
+    </div>
+    <div class="card">
+      <div class="ctag">🔍 Pain 06</div>
+      <div class="ctitle">Flying Blind on Brand Health</div>
+      <div class="cbody">The only way most talent knows their brand is in trouble is when a headline hits. <strong>No real-time brand health score. No threat velocity. No early warning.</strong> The first signal of a problem is usually the problem itself.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════
+     S4 — THE B.O.S. DASHBOARD
+═══════════════════════════════ -->
+<div class="slide" id="s4">
+  <div class="topbar"></div>
+  <div class="ey a0">The B.O.S. Dashboard</div>
+  <div class="h2 a1">The daily control center.<br><span class="g">Everything in one place.</span></div>
+  <p class="lead a2" style="margin-bottom:16px;max-width:780px">The B.O.S. Dashboard is the first thing talent and their team sees every morning — a single, unified view of the entire brand operation. No switching between tools. No missed updates. Everything that matters, in one place.</p>
+  <div class="dboard a3" style="margin-top:10px">
+    <div class="di">
+      <span class="di-icon">🤝</span>
+      <div class="di-name">Brand Partnerships</div>
+      <div class="di-desc">Active deals, inbound opportunities, contract milestones, renewal alerts, and alignment scoring — all in one view.</div>
+    </div>
+    <div class="di">
+      <span class="di-icon">💰</span>
+      <div class="di-name">Revenue</div>
+      <div class="di-desc">Income tracking across every stream — endorsements, royalties, appearance fees, licensing, content deals — with real-time reporting.</div>
+    </div>
+    <div class="di">
+      <span class="di-icon">📈</span>
+      <div class="di-name">Investments</div>
+      <div class="di-desc">Portfolio tracking across all investment positions. Performance reporting, allocation overview, and milestone alerts. Tracking only — not advisory.</div>
+    </div>
+    <div class="di">
+      <span class="di-icon">📱</span>
+      <div class="di-name">Social Media</div>
+      <div class="di-desc">Content performance, audience growth, engagement analytics, and AI-powered posting recommendations across all platforms.</div>
+    </div>
+    <div class="di">
+      <span class="di-icon">✈️</span>
+      <div class="di-name">Lifestyle</div>
+      <div class="di-desc">Schedule management, travel coordination, commitments calendar, and personal logistics — integrated with the full team view.</div>
+    </div>
+    <div class="di">
+      <span class="di-icon">🌙</span>
+      <div class="di-name">While You Were Sleeping</div>
+      <div class="di-desc">Overnight intelligence brief — everything that happened while the client slept. Threats, opportunities, sentiment shifts, and the day's priorities waiting at 7AM.</div>
+    </div>
+    <div class="di" style="border-top-color:var(--goldb)">
+      <span class="di-icon">✅</span>
+      <div class="di-name">Today's Action Items</div>
+      <div class="di-desc">AI-generated daily priority list. What needs attention today, in what order, and who on the team is responsible. No more wondering where to start.</div>
+    </div>
+    <div class="di" style="border-top-color:rgba(0,200,240,0.5)">
+      <span class="di-icon">🛡️</span>
+      <div class="di-name">Brand Security</div>
+      <div class="di-desc">Active threat monitoring — deepfakes, coordinated attacks, unauthorized likeness use — flagged and ready for response the moment they're detected.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════
+     S5 — WHILE YOU WERE SLEEPING
+═══════════════════════════════ -->
+<div class="slide" id="s5">
+  <div class="topbar"></div>
+  <div class="ey a0">Signature Feature</div>
+  <div class="h2 a1"><span class="g">"While You Were Sleeping"</span></div>
+  <div class="italic a2" style="margin-bottom:10px">Every morning at 7AM — the overnight intelligence brief that changes everything.</div>
+  <div class="g21 a3" style="margin-top:8px">
+    <div>
+      <p class="lead" style="margin-bottom:14px">While talent sleeps, <strong>the world keeps moving.</strong> B.O.S. monitors everything through the night and delivers a complete, prioritized intelligence brief the moment the day starts.</p>
+      <div class="wyws" style="margin-top:10px">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:3px;color:var(--goldb);margin-bottom:12px">GOOD MORNING — HERE'S WHAT YOU MISSED</div>
+        <div class="blist" style="margin-top:0;gap:7px">
+          <div class="bi" style="font-size:14px"><strong>Overnight sentiment summary</strong> — net brand sentiment movement across all 40+ monitored sources</div>
+          <div class="bi"><strong>Threats that need attention</strong> — negative narratives that gained traction overnight, ranked by urgency</div>
+          <div class="bi"><strong>Opportunities that surfaced</strong> — new partnership signals and deal flow aligned to your brand</div>
+          <div class="bi"><strong>What your peers did</strong> — relevant moves by comparable talent in your space</div>
+          <div class="bi"><strong>Today's priority action items</strong> — AI-generated ranked list, ready to act on</div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="card" style="margin-bottom:10px;padding:18px 20px">
+        <div class="ctag">Why This Matters</div>
+        <div class="cbody" style="font-size:15px">A story that starts at 2AM can be a crisis by 6AM. <strong>The teams that win start the day informed</strong> — not spending the first two hours catching up. B.O.S. is the only platform that delivers a <strong>ready-to-act morning brief</strong> tailored to that client's brand and active priorities.</div>
+      </div>
+      <div class="callout" style="padding:14px 18px">
+        <strong>The result:</strong> Every team member starts the day with the same complete picture. Zero information gaps. Zero missed signals. Zero surprises.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════
+     S6 — TALENT TEAM
+═══════════════════════════════ -->
+<div class="slide" id="s6">
+  <div class="topbar"></div>
+  <div class="ey a0">The Talent Team</div>
+  <div class="h2 a1">One platform for<br><span class="g">the entire inner circle.</span></div>
+  <p class="lead a2" style="margin-bottom:18px;max-width:800px">B.O.S. connects every member of the talent's team on a single, secure platform — with role-based access, shared intelligence, and a unified decision layer. No more silos. No more gaps.</p>
+  <div class="tgrid a3">
+    <div class="ti"><div class="ti-num">01</div><div class="ti-body"><div class="ti-name">Talent Manager</div><div class="ti-desc">Full platform access. Daily brief. Decision oversight.</div></div></div>
+    <div class="ti"><div class="ti-num">02</div><div class="ti-body"><div class="ti-name">Agent</div><div class="ti-desc">Deal pipeline, opportunity engine, contract tracking.</div></div></div>
+    <div class="ti"><div class="ti-num">03</div><div class="ti-body"><div class="ti-name">Business Manager</div><div class="ti-desc">Revenue reporting, investment tracking, financial overview.</div></div></div>
+    <div class="ti"><div class="ti-num">04</div><div class="ti-body"><div class="ti-name">Partnership Manager</div><div class="ti-desc">Brand deals, sponsorship pipeline, alignment scoring.</div></div></div>
+    <div class="ti"><div class="ti-num">05</div><div class="ti-body"><div class="ti-name">Investment / Money Manager</div><div class="ti-desc">Portfolio tracking, performance reporting, allocation view.</div></div></div>
+    <div class="ti"><div class="ti-num">06</div><div class="ti-body"><div class="ti-name">PR Team</div><div class="ti-desc">Reputation Shield, crisis center, narrative monitoring.</div></div></div>
+    <div class="ti"><div class="ti-num">07</div><div class="ti-body"><div class="ti-name">Social Media Manager</div><div class="ti-desc">Content intelligence, posting schedule, performance analytics.</div></div></div>
+    <div class="ti"><div class="ti-num">08</div><div class="ti-body"><div class="ti-name">Legal</div><div class="ti-desc">Contract vault, compliance alerts, approval workflows.</div></div></div>
+    <div class="ti"><div class="ti-num">09</div><div class="ti-body"><div class="ti-name">Personal Assistant (PA)</div><div class="ti-desc">Lifestyle module, schedule, travel, daily action items.</div></div></div>
+  </div>
+  <div class="callout a4" style="margin-top:16px"><strong>Every team member sees what they need. Nothing they don't.</strong> Role-based access means the talent's financial data isn't visible to the social media manager. The legal team's documents aren't accessible to the PA. Intelligent access, zero risk.</div>
+</div>
+
+<!-- ═══════════════════════════════
+     S7 — TWO BUCKETS
+═══════════════════════════════ -->
+<div class="slide" id="s7">
+  <div class="topbar"></div>
+  <div class="ey a0">Who B.O.S. Is Built For</div>
+  <div class="h2 a1">Two client buckets.<br><span class="g">One platform.</span></div>
+  <div class="g2 a2" style="margin-top:18px;gap:20px">
+    <div class="bucket">
+      <div class="btitle" style="color:var(--goldb)">Bucket 01</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:clamp(32px,4vw,52px);letter-spacing:3px;color:var(--white);margin-bottom:6px">Celebrities</div>
+      <div class="bsub">Artists · Musicians · Actors · Sports Stars</div>
+      <p class="cbody" style="margin-bottom:18px;font-size:16px">The traditional elite tier — household names with established brand equity, complex business empires, large management teams, and significant commercial relationships across multiple verticals simultaneously.</p>
+      <div style="margin-bottom:16px">
+        <span class="btag">🎵 Musicians & Artists</span>
+        <span class="btag">🎬 Actors & Film Talent</span>
+        <span class="btag">🏀 Sports Stars</span>
+        <span class="btag">🎤 Comedians & Performers</span>
+        <span class="btag">📺 TV Personalities</span>
+      </div>
+      <div class="blist">
+        <div class="bi">Multi-vertical empire management — music, film, business, investments</div>
+        <div class="bi">Established sponsorship portfolios with complex renewal cycles</div>
+        <div class="bi">Large management teams requiring unified coordination</div>
+        <div class="bi">High-stakes brand security — deepfakes, coordinated attacks</div>
+        <div class="bi">Long-arc legacy architecture — building for decades, not quarters</div>
+      </div>
+    </div>
+    <div class="bucket b2">
+      <div class="btitle" style="color:var(--cyan)">Bucket 02</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:clamp(32px,4vw,52px);letter-spacing:3px;color:var(--white);margin-bottom:6px">Creators</div>
+      <div class="bsub" style="color:rgba(0,200,240,0.6)">High-End Influencers · Content Creators</div>
+      <p class="cbody" style="margin-bottom:18px;font-size:16px">The new elite — creators and influencers who have built substantial audiences, commercial relationships, and brand value through digital-first platforms. Smaller teams, faster-moving landscapes, equally high stakes.</p>
+      <div style="margin-bottom:16px">
+        <span class="btag b2">📸 Premium Lifestyle Creators</span>
+        <span class="btag b2">🎮 Gaming & Entertainment Creators</span>
+        <span class="btag b2">💪 Fitness & Wellness Influencers</span>
+        <span class="btag b2">🍽️ Food & Culture Creators</span>
+        <span class="btag b2">💼 Business & Finance Creators</span>
+      </div>
+      <div class="blist">
+        <div class="bi">Rapid deal flow — brand partnerships move fast in creator economy</div>
+        <div class="bi">Platform algorithm volatility — one change can impact entire revenue model</div>
+        <div class="bi">Growing management structures that need centralization</div>
+        <div class="bi">Brand identity protection as audience scales rapidly</div>
+        <div class="bi">Transitioning from creator to entrepreneur — B.O.S. scales with them</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════
+     S8 — WHAT THE PLATFORM DOES
+═══════════════════════════════ -->
+<div class="slide" id="s8">
+  <div class="topbar"></div>
+  <div class="ey a0">Platform Capabilities</div>
+  <div class="h2 a1">What B.O.S. does.<br><span class="g">Module by module.</span></div>
+  <div class="mgrid a2">
+    <div class="mc"><span class="mn">01</span><div class="mname">Command Center</div><div class="mdesc">Real-time brand health score, priority alert queue, morning brief, unified team view. The nerve center of the entire operation.</div></div>
+    <div class="mc"><span class="mn">02</span><div class="mname">Reputation Shield</div><div class="mdesc">40+ source monitoring, predictive threat scoring 72hrs ahead, deepfake detection, counter-narrative playbooks generated automatically.</div></div>
+    <div class="mc"><span class="mn">03</span><div class="mname">Social Intelligence</div><div class="mdesc">Audience growth, fan sentiment segmentation, viral moment prediction, cross-platform analytics. Know your audience before you post.</div></div>
+    <div class="mc"><span class="mn">04</span><div class="mname">Brand Security</div><div class="mdesc">Deepfake monitoring, unauthorized likeness detection, coordinated attack identification, impersonation alerts. Active defense, not passive reporting.</div></div>
+    <div class="mc"><span class="mn">05</span><div class="mname">Crisis Center</div><div class="mdesc">4-level severity system, pre-built response playbooks, stakeholder comms hub, post-crisis analysis. Never start from zero in an emergency.</div></div>
+    <div class="mc"><span class="mn">06</span><div class="mname">Opportunity Engine</div><div class="mdesc">AI deal sourcing, 12-dimension brand alignment scoring, ROI prediction, negotiation guidance. The deals you didn't know to look for.</div></div>
+    <div class="mc"><span class="mn">07</span><div class="mname">Revenue & Investments</div><div class="mdesc">Income tracking across all streams. Investment portfolio performance reporting. Allocation overview. Financial clarity — not financial advice.</div></div>
+    <div class="mc"><span class="mn">08</span><div class="mname">Team Command</div><div class="mdesc">Role-based access for every advisor. Decision audit trail. Approval workflows. Encrypted comms. Document vault. One platform, zero silos.</div></div>
+    <div class="mc"><span class="mn">09</span><div class="mname">Legacy Intelligence</div><div class="mdesc">Long-arc brand narrative tracking, equity scoring, 10-year trajectory modeling, peer benchmarking. Build something that lasts.</div></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════
+     S9 — WHAT IT IS VS ISN'T
+═══════════════════════════════ -->
+<div class="slide" id="s9">
+  <div class="topbar"></div>
+  <div class="ey a0">Platform Clarity</div>
+  <div class="h2 a1">What B.O.S. does.<br><span class="g">What it doesn't.</span></div>
+  <div class="g2 a3" style="margin-top:18px;gap:22px">
+    <div>
+      <div class="callout" style="margin-bottom:16px;font-size:16px"><strong>✅ B.O.S. IS an operating system</strong> — it processes intelligence, surfaces decisions, and orchestrates action across the entire brand operation.</div>
+      <div class="blist">
+        <div class="bi"><strong>Active crisis management</strong> — detects, assesses, and orchestrates response, automatically</div>
+        <div class="bi"><strong>Predictive threat intelligence</strong> — 72-hour early warning before a crisis peaks</div>
+        <div class="bi"><strong>Brand security enforcement</strong> — deepfakes, impersonation, coordinated attacks detected in real time</div>
+        <div class="bi"><strong>Opportunity identification</strong> — continuous AI scanning for brand-aligned partnerships</div>
+        <div class="bi"><strong>Revenue & portfolio tracking</strong> — unified financial visibility across all income streams and investments</div>
+        <div class="bi"><strong>Team unification</strong> — one platform for every advisor, one shared intelligence layer</div>
+        <div class="bi"><strong>Legacy architecture</strong> — long-arc narrative built and tracked over years, not quarters</div>
+      </div>
+    </div>
+    <div>
+      <div class="warn" style="margin-bottom:16px;font-size:16px"><strong>❌ B.O.S. is NOT an aggregator</strong> — we do not collect data and display it. We interpret it and tell you what to do.</div>
+      <div class="blist">
+        <div class="bi"><strong>Not an investment advisor</strong> — B.O.S. tracks and reports on investment portfolios. It does not advise, recommend, or manage investments. That requires a licensed professional.</div>
+        <div class="bi"><strong>Not a PR agency</strong> — we give PR teams dramatically better intelligence. We do not replace them.</div>
+        <div class="bi"><strong>Not a social media tool</strong> — we tell you what to post, when, and why. Execution stays with the social team.</div>
+        <div class="bi"><strong>Not a data dashboard</strong> — every insight comes with a recommended action, not just a chart.</div>
+        <div class="bi"><strong>Not a replacement for any advisor</strong> — B.O.S. makes every person on the team more effective. It replaces nobody.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════
+     S10 — CURRENT TOOLS & WHY THEY FAIL
+═══════════════════════════════ -->
+<div class="slide" id="s10">
+  <div class="topbar"></div>
+  <div class="ey a0">What They're Using Today</div>
+  <div class="h2 a1">The current setup.<br><span class="g">And where it breaks down.</span></div>
+  <div class="g21 a2" style="margin-top:16px">
+    <div>
+      <p class="lead" style="margin-bottom:16px;font-size:16px">Today's elite talent relies on a <strong>patchwork of people, legacy tools, and reactive processes</strong> built for a different era. Each one does one thing. None of them connect. None of them predict.</p>
+      <div class="blist">
+        <div class="bi"><strong>Traditional PR Firms</strong> — Reactive by design. They manage the story after it breaks. Average response: 4–6 hours. Average crisis peak: under 2 hours.</div>
+        <div class="bi"><strong>Social Listening Tools</strong> (Brandwatch, Sprinklr, Meltwater) — Generic sentiment dashboards. No entertainment or sports specialization. No predictive capability. Data only, no recommended actions.</div>
+        <div class="bi"><strong>Management & Agent Teams</strong> — Human, manual, siloed. No shared intelligence. Critical decisions made from incomplete, disconnected information.</div>
+        <div class="bi"><strong>Google Alerts</strong> — Still common at the highest tier. Zero prediction. Zero context. A notification is not intelligence.</div>
+        <div class="bi"><strong>Talent Agencies</strong> (WME, CAA, Wasserman) — Deal-focused, not intelligence-focused. Monitoring is ad hoc. No real-time capability, no AI, no security layer.</div>
+        <div class="bi"><strong>Spreadsheets & Email Threads</strong> — The de facto operating system for most management teams. No real-time data. No automation. No unified view.</div>
+      </div>
+    </div>
+    <div>
+      <div class="card" style="margin-bottom:14px;border-top-color:var(--red)">
+        <div class="ctag" style="color:var(--red)">The Core Problem</div>
+        <div class="ctitle">Reactive. Fragmented. Human-Speed.</div>
+        <div class="cbody" style="font-size:15px">Every current solution is built on <strong>human bandwidth</strong> — the one resource that cannot scale to match the speed of the modern media environment. None of them predict. None of them connect. <strong>None of them are built for 2026.</strong></div>
+      </div>
+      <div class="warn" style="margin-bottom:14px">
+        <strong>The result:</strong> Stars discover their brand is in crisis when a journalist calls for comment — not 72 hours earlier when something could still be done about it.
+      </div>
+      <div class="callout">
+        <strong>B.O.S. replaces none of these people.</strong> It gives every single one of them dramatically better intelligence, and connects them all to a unified picture for the first time.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════
+     S11 — CLOSING
+═══════════════════════════════ -->
+<div class="slide" id="s11" style="align-items:center;text-align:center">
+  <div class="topbar"></div>
+  <div>
+    <div class="a0" style="font-size:11px;letter-spacing:4px;text-transform:uppercase;color:var(--muted);margin-bottom:8px">An AEGIS AI Company</div>
+    <div class="h1 a1" style="font-size:clamp(60px,10vw,128px)">B.O.S.</div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:clamp(18px,2.5vw,32px);letter-spacing:4px;color:var(--gold);margin-bottom:18px;margin-top:-6px" class="a2">Brand Operating System</div>
+    <div class="g3 a3" style="max-width:820px;margin:0 auto 24px;text-align:left;gap:12px">
+      <div class="card" style="text-align:center;padding:22px 14px">
+        <div style="font-size:26px;margin-bottom:8px">🛡️</div>
+        <div class="ctag" style="display:flex;justify-content:center">Protects</div>
+        <div class="cbody" style="font-size:15px">Brand security, crisis prediction, narrative defense — 24 hours a day</div>
+      </div>
+      <div class="card" style="text-align:center;padding:22px 14px">
+        <div style="font-size:26px;margin-bottom:8px">📈</div>
+        <div class="ctag" style="display:flex;justify-content:center">Grows</div>
+        <div class="cbody" style="font-size:15px">Opportunity discovery, timing intelligence, deal sourcing — continuously</div>
+      </div>
+      <div class="card" style="text-align:center;padding:22px 14px">
+        <div style="font-size:26px;margin-bottom:8px">⚙️</div>
+        <div class="ctag" style="display:flex;justify-content:center">Operates</div>
+        <div class="cbody" style="font-size:15px">Unified team command, legacy architecture, intelligence that compounds</div>
+      </div>
+    </div>
+    <div class="pq a4" style="border:none;padding:0;max-width:700px;margin:0 auto 26px;font-size:clamp(17px,2vw,24px)">"The category doesn't exist yet. The pain is real. The window is open. B.O.S. is the only platform built to fill it."</div>
+    <div style="display:flex;gap:0;max-width:540px;margin:0 auto;" class="a5">
+      <div style="flex:1;padding:14px;border:1px solid var(--border);text-align:center">
+        <div style="font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--muted);margin-bottom:4px">Platform</div>
+        <div style="font-size:14px;color:var(--white)">aegisbos.ai</div>
+      </div>
+      <div style="flex:1;padding:14px;border:1px solid var(--border);border-left:none;text-align:center">
+        <div style="font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--muted);margin-bottom:4px">Email</div>
+        <div style="font-size:14px;color:var(--white)">hello@aegisbos.ai</div>
+      </div>
+      <div style="flex:1;padding:14px;border:1px solid var(--border);border-left:none;text-align:center">
+        <div style="font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--muted);margin-bottom:4px">Company</div>
+        <div style="font-size:14px;color:var(--white)">AEGIS AI · 2026</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /deck -->
+
+<div class="nav">
+  <button class="nbtn" onclick="go(-1)">← Prev</button>
+  <div class="dots" id="dots"></div>
+  <span class="ctr" id="ctr">01 / 11</span>
+  <button class="nbtn" onclick="go(1)">Next →</button>
+</div>
+
+<script>
+const slides=document.querySelectorAll('.slide');
+const N=slides.length;
+let cur=0;
+const dotsEl=document.getElementById('dots');
+slides.forEach((_,i)=>{
+  const d=document.createElement('div');
+  d.className='dot'+(i===0?' on':'');
+  d.onclick=()=>jump(i);
+  dotsEl.appendChild(d);
+});
+function jump(n){
+  if(n<0||n>=N)return;
+  slides[cur].classList.remove('active');
+  slides[cur].classList.add('out');
+  setTimeout(()=>slides[cur].classList.remove('out'),420);
+  cur=n;
+  slides[cur].classList.add('active');
+  document.querySelectorAll('.dot').forEach((d,i)=>d.classList.toggle('on',i===cur));
+  document.getElementById('ctr').textContent=String(cur+1).padStart(2,'0')+' / '+String(N).padStart(2,'0');
+}
+function go(d){jump(cur+d);}
+document.addEventListener('keydown',e=>{
+  if(['ArrowRight','ArrowDown',' '].includes(e.key)){e.preventDefault();go(1);}
+  if(['ArrowLeft','ArrowUp'].includes(e.key)){e.preventDefault();go(-1);}
+  if(e.key==='Home')jump(0);
+  if(e.key==='End')jump(N-1);
+});
+let tx=0;
+document.addEventListener('touchstart',e=>tx=e.touches[0].clientX,{passive:true});
+document.addEventListener('touchend',e=>{const dx=tx-e.changedTouches[0].clientX;if(Math.abs(dx)>50)dx>0?go(1):go(-1);});
+</script>
+</body>
+</html>

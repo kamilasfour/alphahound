@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AlphaHound — Platform Documentation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#080C10;--bg2:#0D1117;--bg3:#141B24;--border:#1E2A38;
+    --amber:#F59E0B;--amber2:#FCD34D;--blue:#38BDF8;--green:#34D399;
+    --red:#F87171;--orange:#FB923C;--purple:#A78BFA;
+    --t1:#F0F6FC;--t2:#8B99A8;--t3:#4A5568;
+    --mono:'JetBrains Mono',monospace;--sans:'Syne',sans-serif;
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:var(--bg);color:var(--t1);font-family:var(--mono);font-size:13px;line-height:1.7;display:flex;min-height:100vh}
+  nav{width:240px;min-width:240px;background:var(--bg2);border-right:1px solid var(--border);padding:32px 0;position:fixed;top:0;left:0;bottom:0;overflow-y:auto;z-index:100}
+  .nav-logo{padding:0 24px 28px;border-bottom:1px solid var(--border);margin-bottom:16px}
+  .nav-logo h1{font-family:var(--sans);font-size:18px;font-weight:800;letter-spacing:-0.02em}
+  .nav-logo h1 span{color:var(--amber)}
+  .nav-logo p{color:var(--t3);font-size:10px;margin-top:3px;letter-spacing:0.15em;text-transform:uppercase}
+  .nav-section{padding:6px 24px 2px;color:var(--t3);font-size:9px;letter-spacing:0.18em;text-transform:uppercase;margin-top:12px}
+  nav a{display:block;padding:6px 24px;color:var(--t2);text-decoration:none;font-size:11px;transition:all 0.15s;border-left:2px solid transparent}
+  nav a:hover{color:var(--t1);background:var(--bg3);border-left-color:var(--amber)}
+  nav a.active{color:var(--amber);border-left-color:var(--amber);background:rgba(245,158,11,0.05)}
+  main{margin-left:240px;flex:1;padding:0;max-width:1100px}
+  .hero{background:linear-gradient(135deg,#080C10 0%,#0D1B2A 50%,#080C10 100%);border-bottom:1px solid var(--border);padding:64px 64px 48px;position:relative;overflow:hidden}
+  .hero::before{content:'';position:absolute;top:-80px;right:-80px;width:400px;height:400px;background:radial-gradient(circle,rgba(245,158,11,0.06) 0%,transparent 70%);pointer-events:none}
+  .hero-tag{font-size:10px;letter-spacing:0.2em;color:var(--amber);text-transform:uppercase;margin-bottom:16px}
+  .hero h1{font-family:var(--sans);font-size:48px;font-weight:800;line-height:1.1;letter-spacing:-0.03em}
+  .hero h1 span{color:var(--amber)}
+  .hero-sub{color:var(--t2);font-size:14px;margin-top:16px;max-width:560px;line-height:1.6}
+  .hero-stats{display:flex;gap:32px;margin-top:40px;padding-top:32px;border-top:1px solid var(--border)}
+  .stat{display:flex;flex-direction:column;gap:4px}
+  .stat-val{font-family:var(--sans);font-size:24px;font-weight:800;color:var(--amber)}
+  .stat-label{font-size:10px;color:var(--t3);letter-spacing:0.12em;text-transform:uppercase}
+  section{padding:56px 64px;border-bottom:1px solid var(--border)}
+  section:last-child{border-bottom:none}
+  .section-tag{font-size:9px;letter-spacing:0.2em;color:var(--amber);text-transform:uppercase;margin-bottom:10px}
+  h2{font-family:var(--sans);font-size:28px;font-weight:800;letter-spacing:-0.02em;margin-bottom:8px}
+  h3{font-family:var(--sans);font-size:16px;font-weight:700;color:var(--t1);margin:32px 0 12px}
+  h3:first-of-type{margin-top:24px}
+  .section-intro{color:var(--t2);font-size:13px;line-height:1.7;margin-bottom:28px;max-width:720px}
+  .pipeline{display:flex;align-items:center;gap:0;margin:28px 0;overflow-x:auto;padding-bottom:8px}
+  .pipe-step{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px 16px;min-width:110px;text-align:center;flex-shrink:0}
+  .pipe-step .ps-num{font-size:9px;color:var(--t3);margin-bottom:4px}
+  .pipe-step .ps-name{font-size:11px;font-weight:700;color:var(--t1)}
+  .pipe-step .ps-desc{font-size:9px;color:var(--t2);margin-top:3px}
+  .pipe-step.hl{border-color:var(--amber);background:rgba(245,158,11,0.06)}
+  .pipe-step.hl .ps-name{color:var(--amber)}
+  .pipe-arrow{color:var(--t3);font-size:16px;padding:0 4px;flex-shrink:0}
+  .tbl-wrap{overflow-x:auto;margin:16px 0;border-radius:8px;border:1px solid var(--border)}
+  table{width:100%;border-collapse:collapse}
+  thead tr{background:var(--bg3);border-bottom:1px solid var(--border)}
+  th{padding:10px 14px;text-align:left;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--t3);font-weight:600;white-space:nowrap}
+  td{padding:10px 14px;font-size:11px;color:var(--t2);border-bottom:1px solid rgba(30,42,56,0.6);vertical-align:top}
+  tr:last-child td{border-bottom:none}
+  tr:hover td{background:rgba(255,255,255,0.01)}
+  td:first-child{color:var(--t1);font-weight:500}
+  td code{background:rgba(56,189,248,0.1);color:var(--blue);padding:1px 5px;border-radius:3px;font-size:10px}
+  pre{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:20px 24px;overflow-x:auto;margin:16px 0;font-size:11px;line-height:1.7;color:var(--t2)}
+  .c{color:var(--t3)}.kw{color:var(--purple)}.st{color:var(--green)}.nm{color:var(--amber)}.op{color:var(--blue)}
+  .badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;margin-right:4px}
+  .ba{background:rgba(245,158,11,0.15);color:var(--amber);border:1px solid rgba(245,158,11,0.3)}
+  .bb{background:rgba(56,189,248,0.12);color:var(--blue);border:1px solid rgba(56,189,248,0.25)}
+  .bg{background:rgba(52,211,153,0.12);color:var(--green);border:1px solid rgba(52,211,153,0.25)}
+  .br{background:rgba(248,113,113,0.12);color:var(--red);border:1px solid rgba(248,113,113,0.25)}
+  .bp{background:rgba(167,139,250,0.12);color:var(--purple);border:1px solid rgba(167,139,250,0.25)}
+  .bz{background:rgba(74,85,104,0.3);color:var(--t2);border:1px solid var(--border)}
+  .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;margin:20px 0}
+  .card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:20px;transition:border-color 0.2s}
+  .card:hover{border-color:var(--t3)}
+  .card-icon{font-size:22px;margin-bottom:10px}
+  .card-title{font-family:var(--sans);font-size:14px;font-weight:700;color:var(--t1);margin-bottom:6px}
+  .card-body{font-size:11px;color:var(--t2);line-height:1.6}
+  .tier-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:20px 0}
+  .tier-card{border-radius:8px;padding:16px;border:1px solid;text-align:center}
+  .tier-card .t-range{font-family:var(--sans);font-size:20px;font-weight:800}
+  .tier-card .t-name{font-size:10px;letter-spacing:0.15em;text-transform:uppercase;margin:6px 0}
+  .tier-card .t-cap{font-size:11px}
+  .tier-card .t-route{font-size:10px;margin-top:6px;opacity:0.8}
+  .tc-m{background:rgba(74,85,104,0.15);border-color:rgba(74,85,104,0.4);color:var(--t2)}
+  .tc-s{background:rgba(52,211,153,0.08);border-color:rgba(52,211,153,0.3);color:var(--green)}
+  .tc-h{background:rgba(251,146,60,0.08);border-color:rgba(251,146,60,0.3);color:var(--orange)}
+  .tc-e{background:rgba(248,113,113,0.08);border-color:rgba(248,113,113,0.3);color:var(--red)}
+  .formula{background:var(--bg3);border:1px solid var(--border);border-left:3px solid var(--amber);border-radius:0 8px 8px 0;padding:16px 20px;margin:16px 0;font-size:12px}
+  .formula .f-label{font-size:9px;color:var(--amber);letter-spacing:0.15em;text-transform:uppercase;margin-bottom:8px}
+  .formula .f-eq{color:var(--t1)}
+  .formula .f-note{color:var(--t2);font-size:11px;margin-top:6px}
+  .alert-box{background:rgba(248,113,113,0.06);border:1px solid rgba(248,113,113,0.25);border-radius:8px;padding:14px 18px;margin:16px 0;font-size:12px;color:var(--t2)}
+  .alert-box strong{color:var(--red)}
+  .info-box{background:rgba(56,189,248,0.06);border:1px solid rgba(56,189,248,0.2);border-radius:8px;padding:14px 18px;margin:16px 0;font-size:12px;color:var(--t2)}
+  .info-box strong{color:var(--blue)}
+  .src-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:16px 0}
+  .src-card{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px}
+  .src-name{font-size:11px;font-weight:700;color:var(--t1);margin-bottom:4px}
+  .src-class{font-size:9px;color:var(--t3);margin-bottom:8px}
+  .src-weight{display:flex;align-items:center;gap:8px}
+  .src-bar{height:3px;background:var(--border);border-radius:2px;flex:1}
+  .src-fill{height:100%;border-radius:2px}
+  .gate-checks{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin:16px 0}
+  .gc{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px 12px;text-align:center}
+  .gc-icon{font-size:18px;margin-bottom:6px}
+  .gc-name{font-size:10px;font-weight:700;color:var(--t1)}
+  .gc-desc{font-size:9px;color:var(--t3);margin-top:4px;line-height:1.4}
+  .schema-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:16px 0}
+  .schema-card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:14px}
+  .sc-table{font-size:11px;font-weight:700;color:var(--amber);margin-bottom:4px}
+  .sc-writer{font-size:9px;color:var(--t3);margin-bottom:6px}
+  .sc-desc{font-size:10px;color:var(--t2);line-height:1.5}
+  ::-webkit-scrollbar{width:6px;height:6px}
+  ::-webkit-scrollbar-track{background:var(--bg)}
+  ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+  ::-webkit-scrollbar-thumb:hover{background:var(--t3)}
+  @media(max-width:900px){nav{display:none}main{margin-left:0}.hero{padding:40px 24px 32px}section{padding:40px 24px}.tier-grid{grid-template-columns:repeat(2,1fr)}.src-grid{grid-template-columns:repeat(2,1fr)}.gate-checks{grid-template-columns:repeat(3,1fr)}.schema-grid{grid-template-columns:repeat(2,1fr)}.hero h1{font-size:32px}}
+</style>
+</head>
+<body>
+<nav>
+  <div class="nav-logo"><h1>ALPHA<span>/HOUND</span></h1><p>Platform Documentation</p></div>
+  <div class="nav-section">Overview</div>
+  <a href="#overview">What is AlphaHound?</a>
+  <a href="#goal">The Goal</a>
+  <div class="nav-section">Signal Engine</div>
+  <a href="#pipeline">Data Pipeline</a>
+  <a href="#sources">Data Sources</a>
+  <a href="#divergence">Divergence Score</a>
+  <a href="#tiers">Signal Tiers</a>
+  <div class="nav-section">Execution</div>
+  <a href="#sizing">Position Sizing</a>
+  <a href="#techgate">Technical Gate</a>
+  <a href="#macro">Macro Context</a>
+  <a href="#leveraged">Leveraged ETFs</a>
+  <a href="#exits">Exit Logic</a>
+  <div class="nav-section">Infrastructure</div>
+  <a href="#scheduler">Scheduler</a>
+  <a href="#database">Database</a>
+  <a href="#api">API Endpoints</a>
+  <a href="#scripts">Scripts</a>
+  <div class="nav-section">Operations</div>
+  <a href="#validation">Hit Rate Validation</a>
+  <a href="#known-issues">Known Issues</a>
+  <a href="#roadmap">Roadmap</a>
+</nav>
+<main>
+
+<div class="hero">
+  <div class="hero-tag">v0.0.3 · Windows Server 2022 · Azure PostgreSQL · Alpaca Paper Trading</div>
+  <h1>ALPHA<span>/HOUND</span><br>Platform Docs</h1>
+  <p class="hero-sub">A financial signal detection and automated trading engine. Detects divergence between institutional flow, congressional trades, options activity, and retail sentiment — then executes automatically via Alpaca.</p>
+  <div class="hero-stats">
+    <div class="stat"><div class="stat-val">9</div><div class="stat-label">Data Sources</div></div>
+    <div class="stat"><div class="stat-val">130+</div><div class="stat-label">Tickers Watched</div></div>
+    <div class="stat"><div class="stat-val">15m</div><div class="stat-label">Pipeline Cycle</div></div>
+    <div class="stat"><div class="stat-val">21</div><div class="stat-label">DB Tables</div></div>
+    <div class="stat"><div class="stat-val">$20k</div><div class="stat-label">Paper Bankroll</div></div>
+  </div>
+</div>
+
+<section id="overview">
+  <div class="section-tag">Overview</div>
+  <h2>What is AlphaHound?</h2>
+  <p class="section-intro">AlphaHound is a fully automated trading engine. It ingests 9 real data sources every 15 minutes, detects when different classes of market participants disagree beyond their historical norm, sizes positions using the Kelly Criterion, and executes paper trades on Alpaca without human intervention.</p>
+  <div class="cards">
+    <div class="card"><div class="card-icon">📡</div><div class="card-title">Signal Detection</div><div class="card-body">Measures cross-source divergence using a D-score (standard deviations from 90-day baseline). When institutional flow and retail sentiment disagree — that's the edge.</div></div>
+    <div class="card"><div class="card-icon">🧮</div><div class="card-title">Kelly Sizing</div><div class="card-body">Position sizes computed from Half-Kelly criterion. Higher D-values unlock larger allocations. Tiered caps prevent overexposure on any single signal.</div></div>
+    <div class="card"><div class="card-icon">⚡</div><div class="card-title">Leveraged Routing</div><div class="card-body">HIGH and EXTREME tier signals route to 3× leveraged ETFs. XLF SHORT becomes FAZ LONG — same exposure, no short-selling mechanics, no PDT issues.</div></div>
+    <div class="card"><div class="card-icon">🛡️</div><div class="card-title">Multi-Layer Gates</div><div class="card-body">Every trade passes 3 gates: Technical Gate (MACD/RSI/EMA/Volume/Momentum), Macro Context (global risk-off check), and Portfolio Cap (60% max deployed).</div></div>
+    <div class="card"><div class="card-icon">🌍</div><div class="card-title">Global Context</div><div class="card-body">Overnight Asian and European index levels, US futures, VIX, DXY, Gold and Oil fetched every cycle. RISK_OFF globally blocks long entries and reduces position sizes.</div></div>
+    <div class="card"><div class="card-icon">📊</div><div class="card-title">Hit Rate Validation</div><div class="card-body">Every signal logged with a resolve_by date. On that date, close price vs entry is compared. Hit rate table auto-populates. Gate: 55%+ before going live.</div></div>
+  </div>
+</section>
+
+<section id="goal">
+  <div class="section-tag">Mission</div>
+  <h2>The Goal</h2>
+  <p class="section-intro">Turn $20,000 into $500,000. This is Stage 1. Stage 2 (commercial platform) starts only after Stage 1 exit.</p>
+  <div class="info-box"><strong>Why this is achievable:</strong> With a genuine 60%+ hit rate, Half-Kelly sizing compounds at +15–20% per month. At that rate the target is reachable in 18–24 months. The $20k paper bankroll validates the edge before committing live capital.</div>
+  <div class="formula">
+    <div class="f-label">Core Thesis</div>
+    <div class="f-eq">Institutional flow ≠ Retail sentiment → Price will correct toward institutional direction</div>
+    <div class="f-note">When options desks are buying puts while Reddit is bullish, institutional is usually right. That gap is the trade.</div>
+  </div>
+</section>
+
+<section id="pipeline">
+  <div class="section-tag">Architecture</div>
+  <h2>Data Pipeline</h2>
+  <p class="section-intro">Every 15 minutes, the full pipeline runs automatically via Windows Task Scheduler. Each step is tracked in the <code>pipeline_runs</code> DB table with timing and row counts.</p>
+  <div class="pipeline">
+    <div class="pipe-step"><div class="ps-num">01</div><div class="ps-name">Adapters</div><div class="ps-desc">9 sources pull</div></div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step"><div class="ps-num">02</div><div class="ps-name">raw_posts</div><div class="ps-desc">Normalized</div></div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step"><div class="ps-num">03</div><div class="ps-name">FinBERT</div><div class="ps-desc">Sentiment scored</div></div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step hl"><div class="ps-num">04</div><div class="ps-name">Divergence</div><div class="ps-desc">D-score + p-value</div></div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step"><div class="ps-num">05</div><div class="ps-name">Narrative</div><div class="ps-desc">Claude AI</div></div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step"><div class="ps-num">06</div><div class="ps-name">Trade Advisor</div><div class="ps-desc">Kelly sizing</div></div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step hl"><div class="ps-num">07</div><div class="ps-name">Executor</div><div class="ps-desc">Alpaca orders</div></div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step"><div class="ps-num">08</div><div class="ps-name">Close Pos.</div><div class="ps-desc">Exit logic</div></div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step"><div class="ps-num">09</div><div class="ps-name">Hit Rate</div><div class="ps-desc">P&L resolve</div></div>
+  </div>
+  <div class="tbl-wrap"><table>
+    <thead><tr><th>#</th><th>Step</th><th>Command</th><th>Purpose</th><th>Freq</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>ingest-all</td><td><code>alphahound ingest-all</code></td><td>Pull all 9 adapters in sequence</td><td>15m</td></tr>
+      <tr><td>2</td><td>massive-history</td><td><code>alphahound signals tech-backfill</code></td><td>Daily OHLCV topup from Polygon</td><td>6am</td></tr>
+      <tr><td>3</td><td>compute-all</td><td><code>alphahound signals compute-all</code></td><td>Mention velocity signals</td><td>15m</td></tr>
+      <tr><td>4</td><td>score-institutional</td><td><code>alphahound signals score-institutional</code></td><td>Rule-based congressional/13F scoring</td><td>15m</td></tr>
+      <tr><td>5</td><td>score-sectors</td><td><code>alphahound signals score-sectors</code></td><td>Aggregate constituents into ETF scores</td><td>15m</td></tr>
+      <tr><td>6</td><td>score-new</td><td><code>alphahound signals score-new</code></td><td>FinBERT retail + news scoring (isolated)</td><td>30m</td></tr>
+      <tr><td>7</td><td>divergence-scan</td><td><code>alphahound signals divergence-scan</code></td><td>Cross-source D-score + Claude narratives</td><td>15m</td></tr>
+      <tr><td>8</td><td>trade-advice</td><td><code>alphahound signals trade-advice</code></td><td>Kelly sizing + trade_log logging</td><td>15m</td></tr>
+      <tr><td>9</td><td>execute</td><td><code>alphahound signals execute</code></td><td>Alpaca paper orders — LIVE</td><td>15m</td></tr>
+      <tr><td>10</td><td>hit-rate</td><td><code>alphahound signals hit-rate</code></td><td>Resolve outcomes vs price</td><td>15m</td></tr>
+      <tr><td>11</td><td>rhyme</td><td><code>alphahound signals rhyme</code></td><td>Pattern matching vs historical corpus</td><td>15m</td></tr>
+      <tr><td>12</td><td>close-positions</td><td><code>alphahound signals close-positions</code></td><td>Stop loss / resolve_by exit checks</td><td>15m</td></tr>
+    </tbody>
+  </table></div>
+  <div class="info-box"><strong>Why FinBERT is isolated:</strong> The 440MB transformer was spiking CPU to 100% inside the main 15-min cycle. It was moved to a dedicated 30-min task to keep the pipeline fast. Azure Functions (Sprint 10) will move it to the cloud entirely.</div>
+</section>
+
+<section id="sources">
+  <div class="section-tag">Data</div>
+  <h2>Data Sources</h2>
+  <p class="section-intro">9 external APIs ingested every pipeline cycle. Sources weighted by tier — Tier A (institutional/options) carries 2× the weight of Tier C (retail social).</p>
+  <div class="src-grid">
+    <div class="src-card"><div class="src-name">Unusual Whales</div><div class="src-class">options_flow · TIER A</div><div class="src-weight"><div class="src-bar"><div class="src-fill" style="width:100%;background:var(--amber)"></div></div><span style="color:var(--amber);font-size:10px;font-weight:700">2.0×</span></div></div>
+    <div class="src-card"><div class="src-name">Quiver Quant</div><div class="src-class">institutional_flow · TIER A</div><div class="src-weight"><div class="src-bar"><div class="src-fill" style="width:100%;background:var(--amber)"></div></div><span style="color:var(--amber);font-size:10px;font-weight:700">2.0×</span></div></div>
+    <div class="src-card"><div class="src-name">Finnhub / Yahoo News</div><div class="src-class">news_wire · TIER B</div><div class="src-weight"><div class="src-bar"><div class="src-fill" style="width:75%;background:var(--blue)"></div></div><span style="color:var(--blue);font-size:10px;font-weight:700">1.5×</span></div></div>
+    <div class="src-card"><div class="src-name">Substack / Alpha Vantage</div><div class="src-class">analyst_curated · TIER B</div><div class="src-weight"><div class="src-bar"><div class="src-fill" style="width:75%;background:var(--blue)"></div></div><span style="color:var(--blue);font-size:10px;font-weight:700">1.5×</span></div></div>
+    <div class="src-card"><div class="src-name">ApeWisdom / StockTwits</div><div class="src-class">retail_social · TIER C</div><div class="src-weight"><div class="src-bar"><div class="src-fill" style="width:50%;background:var(--t2)"></div></div><span style="color:var(--t2);font-size:10px;font-weight:700">1.0×</span></div></div>
+    <div class="src-card"><div class="src-name">Polygon.io (Massive)</div><div class="src-class">price_snapshots / price_daily</div><div class="src-weight"><div class="src-bar"><div class="src-fill" style="width:50%;background:var(--purple)"></div></div><span style="color:var(--purple);font-size:10px;font-weight:700">OHLCV</span></div></div>
+  </div>
+</section>
+
+<section id="divergence">
+  <div class="section-tag">Core Algorithm</div>
+  <h2>The Divergence Score (D-Value)</h2>
+  <p class="section-intro">The D-value is the engine's heartbeat. It measures how much the data sources disagree with each other, in standard deviations from the 90-day historical baseline for that ticker.</p>
+  <div class="formula">
+    <div class="f-label">D-Value Formula</div>
+    <div class="f-eq">D = σ_cross_source / σ_historical_90d</div>
+    <div class="f-note">σ_cross_source = std deviation of weighted sentiment means across all sources for this ticker right now<br>σ_historical_90d = rolling 90-day baseline std dev from divergence_events — what's "normal" disagreement for this ticker</div>
+  </div>
+  <div class="formula">
+    <div class="f-label">Statistical Gate</div>
+    <div class="f-eq">p-value &lt; 0.01  (1000-sample permutation null test)</div>
+    <div class="f-note">Both D ≥ 2.0 AND p &lt; 0.01 must pass. Eliminates random noise.</div>
+  </div>
+  <div class="tbl-wrap"><table>
+    <thead><tr><th>D-Value</th><th>Interpretation</th><th>Action</th></tr></thead>
+    <tbody>
+      <tr><td>&lt; 2.0</td><td>Normal background noise</td><td>Ignored entirely</td></tr>
+      <tr><td>2.0 – 4.0</td><td>Mild divergence</td><td>Monitor only — dashboard visible, no execution</td></tr>
+      <tr><td>4.0 – 8.0</td><td>High conviction signal</td><td>Execute STANDARD tier (10% bankroll)</td></tr>
+      <tr><td>8.0 – 20.0</td><td>Very strong divergence</td><td>Execute via 3× leveraged ETF (20% bankroll)</td></tr>
+      <tr><td>&gt; 20.0</td><td>Extreme / exceptional</td><td>Execute via 3× leveraged ETF (30% bankroll)</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="tiers">
+  <div class="section-tag">Signal Classification</div>
+  <h2>Signal Tiers</h2>
+  <p class="section-intro">Every signal is classified into one of four tiers based on its D-value. The tier determines position size cap and whether the engine routes to a leveraged ETF.</p>
+  <div class="tier-grid">
+    <div class="tier-card tc-m"><div class="t-range">D 2–4</div><div class="t-name">MONITOR</div><div class="t-cap">No execution</div><div class="t-route">Watch only</div></div>
+    <div class="tier-card tc-s"><div class="t-range">D 4–8</div><div class="t-name">STANDARD</div><div class="t-cap">10% bankroll cap</div><div class="t-route">Direct trade</div></div>
+    <div class="tier-card tc-h"><div class="t-range">D 8–20</div><div class="t-name">HIGH</div><div class="t-cap">20% bankroll cap</div><div class="t-route">3× Leveraged ETF</div></div>
+    <div class="tier-card tc-e"><div class="t-range">D 20+</div><div class="t-name">EXTREME</div><div class="t-cap">30% bankroll cap</div><div class="t-route">3× Leveraged ETF</div></div>
+  </div>
+</section>
+
+<section id="sizing">
+  <div class="section-tag">Execution</div>
+  <h2>Position Sizing</h2>
+  <p class="section-intro">Position sizes calculated using Half-Kelly Criterion — mathematically optimal bet-sizing that maximises long-run growth while limiting drawdown risk.</p>
+  <div class="formula">
+    <div class="f-label">Signal Probability</div>
+    <div class="f-eq">base_p = min(0.92,  0.50 + (d_value / 20.0))</div>
+    <div class="f-note">D=4.0 → p=0.70. D=20.0 → p=0.92 (capped). Alignment bonus: +0–10% if majority of sources agree on direction.</div>
+  </div>
+  <div class="formula">
+    <div class="f-label">Half-Kelly Position Size</div>
+    <div class="f-eq">kelly_raw = (p − q)  →  kelly_half = kelly_raw × 0.5  →  position = bankroll × min(kelly_half, tier_cap)</div>
+    <div class="f-note">p = signal probability, q = 1 − p. Halving the raw Kelly fraction prevents ruin on losing streaks.</div>
+  </div>
+  <div class="tbl-wrap"><table>
+    <thead><tr><th>Modifier</th><th>Source</th><th>Effect</th></tr></thead>
+    <tbody>
+      <tr><td>Tier cap</td><td>D-value tier</td><td>10% / 20% / 30% hard cap on position_pct</td></tr>
+      <tr><td>Tech gate WEAK</td><td>3/5 indicators pass</td><td>50% size reduction</td></tr>
+      <tr><td>Tech gate REJECT</td><td>≤2/5 indicators pass</td><td>Trade blocked entirely</td></tr>
+      <tr><td>Macro CAUTIOUS</td><td>Global ETF price changes</td><td>Size reduced proportionally</td></tr>
+      <tr><td>Macro RISK_OFF</td><td>Global ETF price changes</td><td>LONG trades blocked entirely</td></tr>
+      <tr><td>Portfolio cap</td><td>Alpaca account equity</td><td>No new positions if deployed ≥ 60%</td></tr>
+    </tbody>
+  </table></div>
+  <div class="info-box"><strong>Example — XLF D=38.9 EXTREME on $20k bankroll:</strong><br>base_p=0.92 → kelly_raw=0.84 → kelly_half=0.42 → capped at 30% EXTREME → <strong>$6,000 into FAZ</strong>.<br>If tech gate WEAK (3/5): $3,000. If tech gate REJECT: blocked.</div>
+</section>
+
+<section id="techgate">
+  <div class="section-tag">Execution Gate</div>
+  <h2>Technical Gate</h2>
+  <p class="section-intro">Before any order is placed, 5 technical indicators are checked against the signal direction. Prevents executing into charts that contradict the fundamental divergence signal.</p>
+  <div class="gate-checks">
+    <div class="gc"><div class="gc-icon">📈</div><div class="gc-name">MACD</div><div class="gc-desc">12/26/9 crossover matches signal direction</div></div>
+    <div class="gc"><div class="gc-icon">📊</div><div class="gc-name">RSI</div><div class="gc-desc">Not overbought for LONG (&lt;70), not oversold for SHORT (&gt;30)</div></div>
+    <div class="gc"><div class="gc-icon">📉</div><div class="gc-name">Volume</div><div class="gc-desc">Current volume ≥ 1.0× the 20-day average</div></div>
+    <div class="gc"><div class="gc-icon">〰️</div><div class="gc-name">EMA Trend</div><div class="gc-desc">Price above EMA20 for LONG, below for SHORT</div></div>
+    <div class="gc"><div class="gc-icon">⚡</div><div class="gc-name">Momentum</div><div class="gc-desc">5-day return sign matches signal direction</div></div>
+  </div>
+  <div class="tbl-wrap"><table>
+    <thead><tr><th>Score</th><th>Verdict</th><th>Effect</th></tr></thead>
+    <tbody>
+      <tr><td>5/5 or 4/5</td><td><span class="badge bg">CONFIRM</span></td><td>Full position size executed</td></tr>
+      <tr><td>3/5</td><td><span class="badge ba">WEAK</span></td><td>Position size halved (50%)</td></tr>
+      <tr><td>≤ 2/5</td><td><span class="badge br">REJECT</span></td><td>Trade blocked entirely</td></tr>
+      <tr><td>Insufficient data</td><td><span class="badge bz">NO_DATA</span></td><td>Pass-through at full size</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="macro">
+  <div class="section-tag">Risk Management</div>
+  <h2>Macro Context</h2>
+  <p class="section-intro">Checks 10 global ETF proxies every cycle to determine whether markets are in a risk-on or risk-off state. On risk-off days, long positions are blocked or size-reduced.</p>
+  <div class="tbl-wrap"><table>
+    <thead><tr><th>ETF</th><th>Measures</th><th>Risk Signal</th></tr></thead>
+    <tbody>
+      <tr><td><code>UVXY</code></td><td>VIX volatility index</td><td>Rising = RISK_OFF</td></tr>
+      <tr><td><code>TLT</code></td><td>20yr Treasury bonds (flight to safety)</td><td>Rising = RISK_OFF</td></tr>
+      <tr><td><code>UUP</code></td><td>Dollar Index (DXY proxy)</td><td>Rising = RISK_OFF</td></tr>
+      <tr><td><code>HYG</code></td><td>High yield credit spreads</td><td>Falling = RISK_OFF</td></tr>
+      <tr><td><code>EWJ</code></td><td>Japan equities</td><td>Falling = global RISK_OFF</td></tr>
+      <tr><td><code>FXI</code></td><td>China large-cap equities</td><td>Falling = global RISK_OFF</td></tr>
+      <tr><td><code>EWG</code></td><td>German equities (DAX proxy)</td><td>Falling = European RISK_OFF</td></tr>
+      <tr><td><code>EEM</code></td><td>Emerging markets</td><td>Falling = global RISK_OFF</td></tr>
+      <tr><td><code>SPY</code></td><td>S&P 500 US equities</td><td>Falling = US RISK_OFF</td></tr>
+      <tr><td><code>QQQ</code></td><td>Nasdaq 100 tech</td><td>Falling = tech RISK_OFF</td></tr>
+    </tbody>
+  </table></div>
+  <h3>Global Markets Display Tool</h3>
+  <p class="section-intro">A separate CLI tool fetches actual index levels (Nikkei, DAX, FTSE etc) from Yahoo Finance for pre-market context. Run it every morning before market open.</p>
+  <pre><code><span class="c"># Overnight global markets snapshot</span>
+<span class="nm">.\.venv\Scripts\python.exe</span> scripts\global_markets.py</code></pre>
+</section>
+
+<section id="leveraged">
+  <div class="section-tag">Trade Routing</div>
+  <h2>Leveraged ETF Routing</h2>
+  <p class="section-intro">For HIGH and EXTREME tier signals, the engine routes to the 3× leveraged ETF equivalent — always bought LONG. No short-selling mechanics, no PDT rules, no margin requirements.</p>
+  <div class="info-box"><strong>Example:</strong> XLF SHORT signal D=38.9 (EXTREME) → Buy FAZ LONG $6,000.<br>FAZ = 3× short financials. XLF drops 10% → FAZ rises ~30% → +$1,800 profit on one trade.</div>
+  <div class="tbl-wrap"><table>
+    <thead><tr><th>Signal Ticker</th><th>SHORT Signal → Trade</th><th>LONG Signal → Trade</th><th>Sector</th></tr></thead>
+    <tbody>
+      <tr><td><code>XLF</code></td><td><span class="badge br">FAZ</span> 3× short financials</td><td><span class="badge bg">FAS</span> 3× long financials</td><td>Financials</td></tr>
+      <tr><td><code>XLK / QQQ</code></td><td><span class="badge br">SQQQ</span> 3× short Nasdaq</td><td><span class="badge bg">TQQQ</span> 3× long Nasdaq</td><td>Technology</td></tr>
+      <tr><td><code>SPY</code></td><td><span class="badge br">SPXS</span> 3× short S&P</td><td><span class="badge bg">UPRO</span> 3× long S&P</td><td>Broad Market</td></tr>
+      <tr><td><code>SMH / SOXX</code></td><td><span class="badge br">SOXS</span> 3× short semis</td><td><span class="badge bg">SOXL</span> 3× long semis</td><td>Semiconductors</td></tr>
+      <tr><td><code>XLE</code></td><td><span class="badge br">ERY</span> 3× short energy</td><td><span class="badge bg">ERX</span> 3× long energy</td><td>Energy</td></tr>
+      <tr><td><code>IWM</code></td><td><span class="badge br">TZA</span> 3× short Russell</td><td><span class="badge bg">TNA</span> 3× long Russell</td><td>Small Cap</td></tr>
+      <tr><td><code>XBI / IBB</code></td><td><span class="badge br">LABD</span> 3× short biotech</td><td><span class="badge bg">LABU</span> 3× long biotech</td><td>Biotech</td></tr>
+      <tr><td><code>GDX</code></td><td><span class="badge br">DUST</span> 3× short gold miners</td><td><span class="badge bg">NUGT</span> 3× long gold miners</td><td>Gold Miners</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="exits">
+  <div class="section-tag">Risk Management</div>
+  <h2>Exit Logic</h2>
+  <p class="section-intro">The close_positions step checks all open trade_log entries every 15-minute cycle against three exit triggers.</p>
+  <div class="tbl-wrap"><table>
+    <thead><tr><th>Trigger</th><th>Condition</th><th>Action</th></tr></thead>
+    <tbody>
+      <tr><td>Hard exit date</td><td>resolve_by date has passed (stored in trade_log)</td><td>Close at market — no questions asked</td></tr>
+      <tr><td>Stop loss</td><td>Current price breached stop_price in trade_log notes</td><td>Close at market immediately</td></tr>
+      <tr><td>Signal fade</td><td>Divergence D &lt; 1.5 (edge resolved itself)</td><td>Close — reason for trade no longer exists</td></tr>
+    </tbody>
+  </table></div>
+  <div class="formula">
+    <div class="f-label">Stop Loss Calculation</div>
+    <div class="f-eq">stop_pct = max(5%,  min(25%,  100% / (D × 2)))</div>
+    <div class="f-note">D=4.0 → stop=12.5%. D=10.0 → stop=5.0%. Higher conviction signals get tighter stops.</div>
+  </div>
+</section>
+
+<section id="scheduler">
+  <div class="section-tag">Operations</div>
+  <h2>Scheduled Tasks</h2>
+  <div class="tbl-wrap"><table>
+    <thead><tr><th>Task</th><th>Frequency</th><th>Script</th><th>Purpose</th></tr></thead>
+    <tbody>
+      <tr><td>AlphaHound-Ingest</td><td>Every 15 minutes</td><td><code>scripts\ingest_all.ps1</code></td><td>Full pipeline — ingest + divergence + execute</td></tr>
+      <tr><td>AlphaHound-Score</td><td>Every 30 min (+7 min offset)</td><td><code>scripts\score_new.ps1</code></td><td>Isolated FinBERT scoring run</td></tr>
+      <tr><td>AlphaHound-Earnings</td><td>Daily at 6am</td><td><code>scripts\ingest_earnings.ps1</code></td><td>Finnhub earnings calendar refresh</td></tr>
+    </tbody>
+  </table></div>
+  <h3>Key Diagnostic Commands</h3>
+  <pre><code><span class="c"># Full session overview — run at start of every session</span>
+<span class="nm">.\.venv\Scripts\python.exe</span> scripts\session_start.py
+
+<span class="c"># Active signals right now (last 2 hours only)</span>
+<span class="nm">.\.venv\Scripts\python.exe</span> scripts\check_divergence.py
+
+<span class="c"># Deep system health check</span>
+<span class="nm">.\.venv\Scripts\python.exe</span> scripts\system_check.py
+
+<span class="c"># Overnight global markets snapshot</span>
+<span class="nm">.\.venv\Scripts\python.exe</span> scripts\global_markets.py
+
+<span class="c"># Force execute manually (bypasses 15-min wait)</span>
+<span class="nm">.\.venv\Scripts\alphahound.exe</span> signals execute
+
+<span class="c"># Close all Alpaca paper positions immediately</span>
+<span class="nm">.\.venv\Scripts\python.exe</span> scripts\close_all_positions.py</code></pre>
+</section>
+
+<section id="database">
+  <div class="section-tag">Infrastructure</div>
+  <h2>Database Tables</h2>
+  <p class="section-intro">Azure PostgreSQL (TimescaleDB). 21 tables. Connection string in <code>.env</code> as <code>DATABASE_URL</code>.</p>
+  <div class="schema-grid">
+    <div class="schema-card"><div class="sc-table">entities</div><div class="sc-writer">storage.EntityResolver</div><div class="sc-desc">Canonical symbol registry. Unique on (module_id, symbol, kind). In-memory cache.</div></div>
+    <div class="schema-card"><div class="sc-table">raw_posts</div><div class="sc-writer">All text adapters</div><div class="sc-desc">Normalized content. Deduped on (adapter_id, external_id, entity_id). Author SHA-256 hashed.</div></div>
+    <div class="schema-card"><div class="sc-table">sentiment_scores</div><div class="sc-writer">FinBERT + rule-based scorers</div><div class="sc-desc">Polarity + confidence per post per entity. Watermark-tracked for incremental scoring.</div></div>
+    <div class="schema-card"><div class="sc-table">divergence_events</div><div class="sc-writer">signals.divergence</div><div class="sc-desc">D-score + p-value + components JSONB + Claude narrative per entity per time.</div></div>
+    <div class="schema-card"><div class="sc-table">trade_log</div><div class="sc-writer">trade_advisor + executor</div><div class="sc-desc">Signal recs + Alpaca order IDs + outcome + PnL + resolve_by date.</div></div>
+    <div class="schema-card"><div class="sc-table">price_snapshots</div><div class="sc-writer">Polygon adapter</div><div class="sc-desc">Prev-day close + 1d/5d change + vs SPY per entity.</div></div>
+    <div class="schema-card"><div class="sc-table">price_daily</div><div class="sc-writer">MassiveHistory adapter</div><div class="sc-desc">Daily OHLCV from Polygon. Feeds technical gate and macro context.</div></div>
+    <div class="schema-card"><div class="sc-table">options_flow</div><div class="sc-writer">Unusual Whales adapter</div><div class="sc-desc">Flow alerts: premium, put/call, expiry. Synthesized as divergence sentiment.</div></div>
+    <div class="schema-card"><div class="sc-table">hit_rate</div><div class="sc-writer">signals.hit_rate</div><div class="sc-desc">Rolling signal accuracy windows. Populates May 14–15 first time.</div></div>
+    <div class="schema-card"><div class="sc-table">pipeline_runs</div><div class="sc-writer">run_pipeline_step.py</div><div class="sc-desc">Every scheduler step tracked: timing, row count, error. Health monitoring.</div></div>
+    <div class="schema-card"><div class="sc-table">earnings_calendar</div><div class="sc-writer">Finnhub adapter</div><div class="sc-desc">Upcoming earnings dates. Used to set resolve_by to earnings date.</div></div>
+    <div class="schema-card"><div class="sc-table">historical_events</div><div class="sc-writer">Manual seed</div><div class="sc-desc">Historical market events with component polarity vectors. Used by Rhyme Engine.</div></div>
+  </div>
+  <h3>Key Monitoring Queries</h3>
+  <pre><code><span class="c">-- Pipeline health (run in DBeaver)</span>
+<span class="kw">SELECT</span> step, status, rows_affected, duration_ms, error, started_at
+<span class="kw">FROM</span> pipeline_runs <span class="kw">ORDER BY</span> started_at <span class="kw">DESC LIMIT</span> 20;
+
+<span class="c">-- Active signals right now</span>
+<span class="kw">SELECT</span> e.canonical_symbol, de.d_value, de.p_value, de.time
+<span class="kw">FROM</span> divergence_events de <span class="kw">JOIN</span> entities e <span class="kw">ON</span> e.entity_id = de.entity_id
+<span class="kw">WHERE</span> de.time >= now() - interval <span class="st">'2 hours'</span>
+<span class="kw">ORDER BY</span> de.d_value <span class="kw">DESC</span>;
+
+<span class="c">-- Open paper positions</span>
+<span class="kw">SELECT</span> e.canonical_symbol, tl.side, tl.size, tl.alpaca_status
+<span class="kw">FROM</span> trade_log tl <span class="kw">JOIN</span> entities e <span class="kw">ON</span> e.entity_id = tl.entity_id
+<span class="kw">WHERE</span> tl.alpaca_order_id <span class="kw">IS NOT NULL AND</span> tl.closed_at <span class="kw">IS NULL</span>;
+
+<span class="c">-- Hit rate (populates May 14-15)</span>
+<span class="kw">SELECT</span> window_days, hit_rate_pct, total_signals, computed_at
+<span class="kw">FROM</span> hit_rate <span class="kw">ORDER BY</span> computed_at <span class="kw">DESC</span>;</code></pre>
+</section>
+
+<section id="api">
+  <div class="section-tag">Dashboard</div>
+  <h2>API Endpoints</h2>
+  <p class="section-intro">FastAPI backend at <code>localhost:8080</code>. TTL dict cache — most endpoints cached 60–300 seconds to reduce DB load.</p>
+  <div class="tbl-wrap"><table>
+    <thead><tr><th>Endpoint</th><th>Cache</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>GET /api/alerts</code></td><td>—</td><td><code>?show_all=false</code> = D≥4.0 only (default). <code>?show_all=true</code> = D≥2.0. Full Kelly/tier/leveraged routing payload.</td></tr>
+      <tr><td><code>GET /api/global-markets</code></td><td>300s</td><td>Yahoo Finance index snapshots — Asia, Europe, Futures verdicts + size_modifier.</td></tr>
+      <tr><td><code>GET /api/macro</code></td><td>120s</td><td>Macro verdict (RISK_OFF/NEUTRAL/RISK_ON), score, size_modifier, per-ETF signals.</td></tr>
+      <tr><td><code>GET /api/positions</code></td><td>—</td><td>Live Alpaca open positions: market value, unrealized P&L, cost basis.</td></tr>
+      <tr><td><code>GET /api/trade-log</code></td><td>—</td><td>All logged trades with order IDs, outcome (WIN/LOSS/PENDING), PnL, resolve_by.</td></tr>
+      <tr><td><code>GET /api/hit-rate</code></td><td>—</td><td>Rolling signal accuracy — empty until May 14–15.</td></tr>
+      <tr><td><code>GET /api/tech-check-direction</code></td><td>—</td><td>Technical gate result for any ticker + direction.</td></tr>
+      <tr><td><code>GET /api/options-flow</code></td><td>—</td><td>Recent Unusual Whales alerts: premium, call/put, expiry.</td></tr>
+      <tr><td><code>GET /api/congress</code></td><td>—</td><td>Congressional trades: politician, ticker, amount, transaction type.</td></tr>
+      <tr><td><code>GET /api/universe</code></td><td>—</td><td>Full watchlist: price, 1D/5D changes, vs SPY, D-value, direction per ticker.</td></tr>
+      <tr><td><code>GET /api/sectors</code></td><td>—</td><td>Sector ETF rollup: polarity, constituent count, coverage, D badge.</td></tr>
+      <tr><td><code>GET /api/market-heatmap</code></td><td>—</td><td>All tickers by 5D% grouped into US/Sectors/Commodities/International/Macro.</td></tr>
+      <tr><td><code>GET /api/summary</code></td><td>60s</td><td>KPI counts: active alerts, posts 24h, entities, engine status.</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="scripts">
+  <div class="section-tag">Operations</div>
+  <h2>Scripts Reference</h2>
+  <div class="tbl-wrap"><table>
+    <thead><tr><th>Script</th><th>Type</th><th>Purpose</th></tr></thead>
+    <tbody>
+      <tr><td><code>session_start.py</code></td><td>Python</td><td>Full session overview — pipeline health, active alerts, positions, hit rate</td></tr>
+      <tr><td><code>system_check.py</code></td><td>Python</td><td>Deep health — last 10 pipeline steps, signals, positions, bankroll config</td></tr>
+      <tr><td><code>check_divergence.py</code></td><td>Python</td><td>Active signals last 2h only — one row per ticker with tier label</td></tr>
+      <tr><td><code>check_signals.py</code></td><td>Python</td><td>Trade recommendations above D=4.0 with routing and sizing</td></tr>
+      <tr><td><code>global_markets.py</code></td><td>Python</td><td>Overnight Asian/European/Futures snapshot with verdicts</td></tr>
+      <tr><td><code>close_all_positions.py</code></td><td>Python</td><td>Force-close all Alpaca paper positions immediately</td></tr>
+      <tr><td><code>check_errors.py</code></td><td>Python</td><td>Pipeline errors from last 1 hour with full error messages</td></tr>
+      <tr><td><code>check_keys.py</code></td><td>Python</td><td>Verify all .env API keys present and non-empty</td></tr>
+      <tr><td><code>diagnose.py</code></td><td>Python</td><td>DB connectivity + table row counts</td></tr>
+      <tr><td><code>ingest_all.ps1</code></td><td>PowerShell</td><td>Main scheduled pipeline wrapper with logging</td></tr>
+      <tr><td><code>score_new.ps1</code></td><td>PowerShell</td><td>Isolated FinBERT scoring (30-min task)</td></tr>
+      <tr><td><code>start_dashboard.ps1</code></td><td>PowerShell</td><td>Launch uvicorn dashboard on port 8080</td></tr>
+      <tr><td><code>register_scheduled_task.ps1</code></td><td>PowerShell</td><td>Register all Windows Task Scheduler tasks</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="validation">
+  <div class="section-tag">Go-Live Gate</div>
+  <h2>Hit Rate Validation</h2>
+  <p class="section-intro">May 14–15, 2026 is when the first resolve_by dates pass and the hit_rate table auto-populates for the first time. This is the go/no-go gate before real capital.</p>
+  <div class="tbl-wrap"><table>
+    <thead><tr><th>Hit Rate</th><th>Decision</th><th>Next Step</th></tr></thead>
+    <tbody>
+      <tr><td>&gt; 60%</td><td><span class="badge bg">GO LIVE</span></td><td>Enable ALPACA_LIVE=true, fund real account, full Kelly sizing</td></tr>
+      <tr><td>55% – 60%</td><td><span class="badge ba">CAUTIOUS GO</span></td><td>Go live at 25% Kelly, scale up as more signals resolve</td></tr>
+      <tr><td>50% – 55%</td><td><span class="badge bp">EXTEND PAPER</span></td><td>Continue paper another 2 weeks, diagnose weak signals</td></tr>
+      <tr><td>&lt; 50%</td><td><span class="badge br">STOP</span></td><td>Signals don't predict price. No live capital. Diagnose and rebuild.</td></tr>
+    </tbody>
+  </table></div>
+  <div class="alert-box"><strong>Important:</strong> Need 20+ resolved signals for statistical significance. May 14–15 gives the first batch. A 60% hit rate on 5 signals means nothing. A 60% hit rate on 50+ signals means everything.</div>
+</section>
+
+<section id="known-issues">
+  <div class="section-tag">Engineering</div>
+  <h2>Known Issues</h2>
+  <div class="tbl-wrap"><table>
+    <thead><tr><th>Issue</th><th>File</th><th>Impact</th><th>Status</th></tr></thead>
+    <tbody>
+      <tr><td>Scaled notional computed but unscaled value passed to place_order</td><td><code>executor.py</code></td><td>Tech/macro size modifiers not fully applied to order notional</td><td><span class="badge br">Open</span></td></tr>
+      <tr><td>alpaca-trade-api missing from pyproject.toml</td><td><code>pyproject.toml</code></td><td>Clean installs may fail silently</td><td><span class="badge br">Open</span></td></tr>
+      <tr><td>analyst_curated not in FinBERT scoreable classes</td><td><code>orchestrator.py</code></td><td>Alpha Vantage + Substack ingested but never sentiment-scored</td><td><span class="badge br">Open</span></td></tr>
+      <tr><td>Finnhub social sentiment 403 on all tickers</td><td><code>finnhub.py</code></td><td>Missing API tier — social sentiment unavailable. News still works.</td><td><span class="badge ba">Non-critical</span></td></tr>
+      <tr><td>Thread pool warnings every cycle</td><td><code>orchestrator.py</code></td><td>Cosmetic — "couldn't stop pool-1-worker" messages. No functional impact.</td><td><span class="badge ba">Cosmetic</span></td></tr>
+      <tr><td>Portfolio cap formula wrong with Alpaca margin</td><td><code>executor.py</code></td><td>Alpaca paper gives 2× buying_power — cap may not trigger correctly</td><td><span class="badge ba">Monitor</span></td></tr>
+      <tr><td>Kalshi: 0 contracts stored every cycle</td><td><code>kalshi.py</code></td><td>Ticker mapping mismatch — no prediction market data</td><td><span class="badge bz">Low priority</span></td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="roadmap">
+  <div class="section-tag">What's Next</div>
+  <h2>Roadmap</h2>
+  <div class="tbl-wrap"><table>
+    <thead><tr><th>Sprint</th><th>Status</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td>0–9.8</td><td><span class="badge bg">Complete</span></td><td>DB, pipeline, FinBERT, OHLCV, narratives, options flow, congressional, Kelly sizing, tech gate, sector rollup, Rhyme Engine, paper trading wired</td></tr>
+      <tr><td>10 (now)</td><td><span class="badge ba">In Progress</span></td><td>Paper trading week May 5–12 · Leveraged ETF routing live · Azure Functions FinBERT · Hit rate validation May 14–15</td></tr>
+      <tr><td>11</td><td><span class="badge bz">Planned</span></td><td>Options trading (Alpaca options API) for D &gt; 20 signals — highest leverage path</td></tr>
+      <tr><td>12</td><td><span class="badge bz">Planned</span></td><td>Go-live with real capital · ALPACA_LIVE=true · Position sizing ramp from 25% Kelly</td></tr>
+      <tr><td>13+</td><td><span class="badge bz">Future</span></td><td>DTW in Rhyme Engine (~July 2026) · Qtrade integration · Stage 2 commercial platform</td></tr>
+    </tbody>
+  </table></div>
+  <h3>Key Dates</h3>
+  <div class="tbl-wrap"><table>
+    <thead><tr><th>Date</th><th>Event</th></tr></thead>
+    <tbody>
+      <tr><td>May 5, 2026</td><td>Paper trading enabled. First trades placed. Two execution bugs fixed.</td></tr>
+      <tr><td>May 5–12, 2026</td><td>Paper trading week. Engine live. Monitoring P&L and signal quality.</td></tr>
+      <tr><td>May 14–15, 2026</td><td><strong>Hit rate validation gate.</strong> First resolve_by dates pass. Go/no-go decision.</td></tr>
+      <tr><td>May 13+, 2026</td><td>Go-live target if paper P&L and hit rate confirm edge.</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+</main>
+<script>
+  const sections = document.querySelectorAll('section[id]');
+  const links = document.querySelectorAll('nav a');
+  function updateActive() {
+    let cur = '';
+    sections.forEach(s => { if (window.scrollY >= s.offsetTop - 100) cur = s.id; });
+    links.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + cur));
+  }
+  window.addEventListener('scroll', updateActive, {passive:true});
+  updateActive();
+</script>
+</body>
+</html>

@@ -1,0 +1,160 @@
+{
+  "as_of": "2026-06-28T18:12:30.784232+00:00",
+  "as_of_pt": "2026-06-28 11:12 AM PT",
+  "posts_24h": {
+    "stocks.apewisdom": {
+      "posts": 48500,
+      "latest": "2026-06-28T18:05:02.530851+00:00"
+    },
+    "stocks.quiver": {
+      "posts": 699,
+      "latest": "2026-06-28T00:00:00+00:00"
+    },
+    "stocks.finnhub": {
+      "posts": 423,
+      "latest": "2026-06-28T15:26:10+00:00"
+    },
+    "stocks.yahoo_finance": {
+      "posts": 419,
+      "latest": "2026-06-28T17:55:00+00:00"
+    },
+    "stocks.substack": {
+      "posts": 37,
+      "latest": "2026-06-28T17:36:19+00:00"
+    }
+  },
+  "last_runs": {
+    "stocks.alpha_vantage": {
+      "age_mins": 85898.0,
+      "duration_s": 31.7,
+      "fetched": 0,
+      "written": 0,
+      "error": null,
+      "ok": true
+    },
+    "stocks.apewisdom": {
+      "age_mins": 7.5,
+      "duration_s": 5.5,
+      "fetched": 500,
+      "written": 500,
+      "error": null,
+      "ok": true
+    },
+    "stocks.earnings_calendar": {
+      "age_mins": 7.5,
+      "duration_s": 1.2,
+      "fetched": 0,
+      "written": 0,
+      "error": null,
+      "ok": true
+    },
+    "stocks.edgar": {
+      "age_mins": 68087.9,
+      "duration_s": 2.1,
+      "fetched": 80,
+      "written": 0,
+      "error": null,
+      "ok": true
+    },
+    "stocks.finnhub": {
+      "age_mins": 7.5,
+      "duration_s": 105.8,
+      "fetched": 3045,
+      "written": 0,
+      "error": null,
+      "ok": true
+    },
+    "stocks.kalshi": {
+      "age_mins": 7.5,
+      "duration_s": 17.1,
+      "fetched": 0,
+      "written": 0,
+      "error": null,
+      "ok": true
+    },
+    "stocks.massive": {
+      "age_mins": 7.5,
+      "duration_s": 41.8,
+      "fetched": 0,
+      "written": 0,
+      "error": null,
+      "ok": true
+    },
+    "stocks.massive_history": {
+      "age_mins": 254.9,
+      "duration_s": 22.4,
+      "fetched": 0,
+      "written": 0,
+      "error": null,
+      "ok": true
+    },
+    "stocks.quiver": {
+      "age_mins": 7.5,
+      "duration_s": 9.3,
+      "fetched": 1000,
+      "written": 0,
+      "error": null,
+      "ok": true
+    },
+    "stocks.stocktwits": {
+      "age_mins": 7.5,
+      "duration_s": 3.5,
+      "fetched": 0,
+      "written": 0,
+      "error": null,
+      "ok": true
+    },
+    "stocks.substack": {
+      "age_mins": 7.4,
+      "duration_s": 38.6,
+      "fetched": 88,
+      "written": 13,
+      "error": null,
+      "ok": true
+    },
+    "stocks.unusual_whales": {
+      "age_mins": 7.4,
+      "duration_s": 127.7,
+      "fetched": 0,
+      "written": 0,
+      "error": null,
+      "ok": true
+    },
+    "stocks.yahoo_finance": {
+      "age_mins": 7.3,
+      "duration_s": 56.6,
+      "fetched": 1740,
+      "written": 2,
+      "error": null,
+      "ok": true
+    }
+  },
+  "options_4h": 912,
+  "quiver_24h": 699,
+  "adapter_status": {
+    "stocks.alpha_vantage": false,
+    "stocks.apewisdom": true,
+    "stocks.earnings_calendar": true,
+    "stocks.edgar": false,
+    "stocks.finnhub": true,
+    "stocks.kalshi": true,
+    "stocks.massive": true,
+    "stocks.massive_history": true,
+    "stocks.quiver": true,
+    "stocks.stocktwits": true,
+    "stocks.substack": true,
+    "stocks.unusual_whales": true,
+    "stocks.yahoo_finance": true
+  },
+  "problems": [
+    {
+      "severity": "YELLOW",
+      "msg": "stocks.massive_history last ran 255m ago"
+    },
+    {
+      "severity": "RED",
+      "msg": "quiver: 1000 fetched, 0 wrote"
+    }
+  ],
+  "overall": "RED"
+}

@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AlphaHound — System Overview</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:       #0a0a0f;
+    --bg2:      #0f0f18;
+    --bg3:      #14141f;
+    --border:   rgba(255,255,255,0.07);
+    --border2:  rgba(255,255,255,0.12);
+    --t1:       #f0eee8;
+    --t2:       #a09e9a;
+    --t3:       #5a5855;
+    --g:        #10b981;
+    --gd:       rgba(16,185,129,0.12);
+    --gb:       rgba(16,185,129,0.25);
+    --r:        #ef4444;
+    --rd:       rgba(239,68,68,0.1);
+    --a:        #f59e0b;
+    --ad:       rgba(245,158,11,0.1);
+    --b:        #3b82f6;
+    --bd:       rgba(59,130,246,0.1);
+    --p:        #8b5cf6;
+    --pd:       rgba(139,92,246,0.1);
+    --mono:     'DM Mono', monospace;
+    --serif:    'DM Serif Display', serif;
+    --sans:     'DM Sans', sans-serif;
+  }
+
+  html { background: var(--bg); color: var(--t1); font-family: var(--sans); font-size: 15px; line-height: 1.7; }
+  body { max-width: 900px; margin: 0 auto; padding: 60px 32px 120px; }
+
+  /* ── Header ── */
+  .masthead { margin-bottom: 72px; border-bottom: 1px solid var(--border); padding-bottom: 48px; }
+  .masthead-eyebrow { font-family: var(--mono); font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--g); margin-bottom: 16px; }
+  .masthead-title { font-family: var(--serif); font-size: clamp(48px, 8vw, 80px); color: var(--t1); line-height: 1.0; margin-bottom: 24px; }
+  .masthead-title em { font-style: italic; color: var(--g); }
+  .masthead-sub { font-size: 18px; color: var(--t2); max-width: 620px; line-height: 1.7; }
+  .masthead-meta { margin-top: 32px; display: flex; gap: 24px; flex-wrap: wrap; }
+  .meta-pill { font-family: var(--mono); font-size: 11px; color: var(--t3); border: 1px solid var(--border); padding: 5px 12px; border-radius: 4px; letter-spacing: 0.08em; }
+
+  /* ── Section ── */
+  .section { margin-bottom: 64px; }
+  .section-label { font-family: var(--mono); font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--t3); margin-bottom: 8px; }
+  .section-title { font-family: var(--serif); font-size: 32px; color: var(--t1); margin-bottom: 20px; line-height: 1.2; }
+  .section-title em { font-style: italic; color: var(--a); }
+  .prose { color: var(--t2); max-width: 680px; }
+  .prose p { margin-bottom: 16px; }
+  .prose strong { color: var(--t1); font-weight: 500; }
+
+  /* ── Thesis box ── */
+  .thesis { background: var(--bg2); border: 1px solid var(--border2); border-left: 3px solid var(--g); border-radius: 0 8px 8px 0; padding: 24px 28px; margin: 32px 0; }
+  .thesis-label { font-family: var(--mono); font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--g); margin-bottom: 10px; }
+  .thesis-text { font-family: var(--serif); font-size: 20px; color: var(--t1); line-height: 1.5; font-style: italic; }
+
+  /* ── Pipeline flow ── */
+  .pipeline { display: flex; flex-direction: column; gap: 0; margin: 32px 0; }
+  .pipe-step { display: flex; gap: 20px; align-items: flex-start; }
+  .pipe-spine { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; }
+  .pipe-dot { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: var(--mono); font-size: 10px; font-weight: 500; flex-shrink: 0; }
+  .pipe-dot.green { background: var(--gd); border: 1px solid var(--gb); color: var(--g); }
+  .pipe-dot.amber { background: var(--ad); border: 1px solid rgba(245,158,11,0.3); color: var(--a); }
+  .pipe-dot.blue  { background: var(--bd); border: 1px solid rgba(59,130,246,0.3); color: var(--b); }
+  .pipe-dot.purple{ background: var(--pd); border: 1px solid rgba(139,92,246,0.3); color: var(--p); }
+  .pipe-dot.red   { background: var(--rd); border: 1px solid rgba(239,68,68,0.3); color: var(--r); }
+  .pipe-line { width: 1px; background: var(--border); flex: 1; min-height: 20px; }
+  .pipe-content { padding: 0 0 32px 0; flex: 1; }
+  .pipe-content h4 { font-family: var(--mono); font-size: 12px; font-weight: 500; letter-spacing: 0.08em; color: var(--t1); margin-bottom: 6px; }
+  .pipe-content p { font-size: 13px; color: var(--t2); line-height: 1.6; }
+
+  /* ── Pillar grid ── */
+  .pillar-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; margin: 24px 0; }
+  .pillar-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 18px 20px; }
+  .pillar-id { font-family: var(--mono); font-size: 10px; font-weight: 500; letter-spacing: 0.12em; margin-bottom: 8px; }
+  .pillar-id.g { color: var(--g); }
+  .pillar-id.a { color: var(--a); }
+  .pillar-id.b { color: var(--b); }
+  .pillar-id.p { color: var(--p); }
+  .pillar-id.r { color: var(--r); }
+  .pillar-name { font-size: 13px; font-weight: 500; color: var(--t1); margin-bottom: 6px; }
+  .pillar-desc { font-size: 12px; color: var(--t2); line-height: 1.5; }
+  .pillar-source { font-family: var(--mono); font-size: 10px; color: var(--t3); margin-top: 8px; }
+
+  /* ── Phase cards ── */
+  .phase-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 24px 0; }
+  @media (max-width: 640px) { .phase-row { grid-template-columns: 1fr; } }
+  .phase-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 24px; }
+  .phase-card.active { border-color: var(--gb); background: linear-gradient(135deg, rgba(16,185,129,0.05), var(--bg2)); }
+  .phase-card.future { border-color: var(--border); opacity: 0.75; }
+  .phase-badge { font-family: var(--mono); font-size: 10px; font-weight: 500; letter-spacing: 0.15em; text-transform: uppercase; padding: 4px 10px; border-radius: 4px; display: inline-block; margin-bottom: 14px; }
+  .phase-badge.p1 { background: var(--gd); color: var(--g); border: 1px solid var(--gb); }
+  .phase-badge.p2 { background: var(--bd); color: var(--b); border: 1px solid rgba(59,130,246,0.3); }
+  .phase-card h3 { font-family: var(--serif); font-size: 22px; color: var(--t1); margin-bottom: 12px; }
+  .phase-card .target { font-family: var(--mono); font-size: 18px; font-weight: 500; margin-bottom: 16px; }
+  .phase-card .target.green { color: var(--g); }
+  .phase-card .target.blue  { color: var(--b); }
+  .phase-card ul { list-style: none; padding: 0; }
+  .phase-card ul li { font-size: 13px; color: var(--t2); padding: 6px 0; border-bottom: 1px solid var(--border); display: flex; gap: 10px; align-items: flex-start; line-height: 1.5; }
+  .phase-card ul li:last-child { border-bottom: none; }
+  .phase-card ul li::before { content: '→'; font-family: var(--mono); color: var(--t3); font-size: 11px; flex-shrink: 0; margin-top: 2px; }
+
+  /* ── Signal example ── */
+  .signal-example { background: var(--bg2); border: 1px solid var(--gb); border-radius: 10px; padding: 24px; margin: 24px 0; }
+  .signal-header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+  .signal-ticker { font-family: var(--mono); font-size: 26px; font-weight: 500; color: var(--t1); }
+  .sig-badge { font-family: var(--mono); font-size: 9px; font-weight: 500; letter-spacing: 0.12em; padding: 3px 8px; border-radius: 4px; }
+  .sig-short { background: var(--rd); color: var(--r); border: 1px solid rgba(239,68,68,0.3); }
+  .sig-super { background: var(--gd); color: var(--g); border: 1px solid var(--gb); }
+  .sig-score { margin-left: auto; text-align: right; }
+  .sig-score-val { font-family: var(--mono); font-size: 22px; font-weight: 500; color: var(--g); line-height: 1; }
+  .sig-score-sub { font-family: var(--mono); font-size: 10px; color: var(--t3); margin-top: 2px; }
+  .pillar-row { display: flex; align-items: flex-start; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--border); font-size: 12px; }
+  .pillar-row:last-of-type { border-bottom: none; }
+  .pillar-icon { width: 16px; text-align: center; flex-shrink: 0; }
+  .pillar-row-name { font-family: var(--mono); font-size: 10px; color: var(--t3); width: 130px; flex-shrink: 0; }
+  .pillar-row-score { font-family: var(--mono); font-size: 10px; color: var(--g); width: 28px; flex-shrink: 0; }
+  .pillar-row-ev { color: var(--t2); flex: 1; line-height: 1.4; }
+  .signal-struct { margin-top: 16px; padding: 12px 16px; background: rgba(59,130,246,0.06); border: 1px solid rgba(59,130,246,0.18); border-radius: 6px; font-size: 12px; color: var(--t2); display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .signal-struct strong { color: var(--b); font-family: var(--mono); font-size: 11px; }
+
+  /* ── Guard table ── */
+  .guard-table { width: 100%; border-collapse: collapse; margin: 24px 0; font-size: 13px; }
+  .guard-table th { font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--t3); font-weight: 400; padding: 8px 12px; border-bottom: 1px solid var(--border2); text-align: left; }
+  .guard-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); color: var(--t2); vertical-align: top; }
+  .guard-table tr:last-child td { border-bottom: none; }
+  .guard-table td:first-child { font-family: var(--mono); font-size: 11px; color: var(--t1); white-space: nowrap; }
+  .tag { font-family: var(--mono); font-size: 10px; padding: 2px 8px; border-radius: 3px; white-space: nowrap; }
+  .tag-g { background: var(--gd); color: var(--g); }
+  .tag-r { background: var(--rd); color: var(--r); }
+  .tag-a { background: var(--ad); color: var(--a); }
+
+  /* ── Sprint tracker ── */
+  .sprint-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; margin: 24px 0; }
+  .sprint-item { background: var(--bg2); border: 1px solid var(--border); border-radius: 7px; padding: 14px 16px; }
+  .sprint-item.done { border-color: var(--gb); }
+  .sprint-num { font-family: var(--mono); font-size: 10px; color: var(--t3); margin-bottom: 6px; letter-spacing: 0.1em; }
+  .sprint-name { font-size: 12px; color: var(--t1); line-height: 1.4; margin-bottom: 8px; }
+  .sprint-status { font-family: var(--mono); font-size: 10px; }
+  .sprint-status.done { color: var(--g); }
+  .sprint-status.current { color: var(--a); }
+
+  /* ── Capital path ── */
+  .cap-track { display: flex; gap: 0; margin: 24px 0; align-items: stretch; }
+  .cap-node { flex: 1; padding: 16px 12px; text-align: center; border: 1px solid var(--border); border-right: none; }
+  .cap-node:first-child { border-radius: 8px 0 0 8px; }
+  .cap-node:last-child  { border-right: 1px solid var(--border); border-radius: 0 8px 8px 0; }
+  .cap-node.current { background: var(--gd); border-color: var(--gb); }
+  .cap-val  { font-family: var(--mono); font-size: 16px; font-weight: 500; color: var(--t1); margin-bottom: 4px; }
+  .cap-val.green { color: var(--g); }
+  .cap-label { font-size: 11px; color: var(--t3); }
+  .cap-arrow { display: flex; align-items: center; padding: 0 4px; color: var(--t3); font-size: 14px; }
+
+  /* ── Disclaimer ── */
+  .disclaimer { margin-top: 80px; padding: 20px 24px; background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; }
+  .disclaimer p { font-family: var(--mono); font-size: 11px; color: var(--t3); line-height: 1.7; }
+
+  hr.divider { border: none; border-top: 1px solid var(--border); margin: 56px 0; }
+</style>
+</head>
+<body>
+
+<!-- MASTHEAD -->
+<div class="masthead">
+  <div class="masthead-eyebrow">Quantale · Internal Documentation · Sprint 11</div>
+  <h1 class="masthead-title">Alpha<em>Hound</em></h1>
+  <p class="masthead-sub">A self-sufficient, automated options trading engine. It watches 1,000+ tickers continuously, identifies rare high-conviction setups using seven independent data pillars, prices the trade, and executes it — without human intervention.</p>
+  <div class="masthead-meta">
+    <span class="meta-pill">Python 3.11 · FastAPI · TimescaleDB</span>
+    <span class="meta-pill">Alpaca Paper Trading</span>
+    <span class="meta-pill">Windows Server 2022 · repsportalvm</span>
+    <span class="meta-pill">Phase 1 Active · May 2026</span>
+  </div>
+</div>
+
+<!-- THE THESIS -->
+<div class="section">
+  <div class="section-label">The thesis</div>
+  <h2 class="section-title">Why this <em>exists</em></h2>
+  <div class="prose">
+    <p>Most retail trading systems are reactive — they alert you to something that already happened and ask you to decide. AlphaHound is different. It is a convergence detector: it looks for moments when multiple independent sources of signal all point in the same direction at the same time, with a binary event approaching that forces a resolution.</p>
+    <p>That convergence is rare. When it happens, the edge is real. The system's job is to find those moments automatically, every 15 minutes, across the entire market, and act on them before the window closes.</p>
+  </div>
+
+  <div class="thesis">
+    <div class="thesis-label">Core thesis</div>
+    <div class="thesis-text">"When institutional options flow, congressional positioning, and social velocity all converge on the same ticker within 45 days of a binary catalyst — that is a non-random signal. We capture it systematically."</div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- THE SEVEN PILLARS -->
+<div class="section">
+  <div class="section-label">The engine</div>
+  <h2 class="section-title">Seven independent <em>pillars</em></h2>
+  <div class="prose">
+    <p>Every ticker is scored across seven pillars every 15 minutes. Each pillar scores 0, 0.5, or 1.0. A non-linear boost of +1.5 fires when four or more independent pillars converge — because independent sources agreeing is worth more than their sum. A Super Signal requires a composite score of 4.0+ with 4+ pillars firing and a binary catalyst in the 14–45 day window.</p>
+  </div>
+
+  <div class="pillar-grid">
+    <div class="pillar-card">
+      <div class="pillar-id g">P1 · SCALABILITY</div>
+      <div class="pillar-name">Liquidity gate</div>
+      <div class="pillar-desc">Is this ticker optionable with tight spreads on a $50k account? Tier A watchlist = 1.0. Extended = 0.5. Unknown = 0.</div>
+      <div class="pillar-source">Source: Internal watchlist</div>
+    </div>
+    <div class="pillar-card">
+      <div class="pillar-id a">P2 · OPTIONS FLOW</div>
+      <div class="pillar-name">Unusual Whales sweep</div>
+      <div class="pillar-desc">Multi-exchange options sweep with Unusual Whales sentiment classification. Unclassified flow does not vote on direction.</div>
+      <div class="pillar-source">Source: Unusual Whales API</div>
+    </div>
+    <div class="pillar-card">
+      <div class="pillar-id b">P3a · CONGRESSIONAL</div>
+      <div class="pillar-name">STOCK Act disclosure</div>
+      <div class="pillar-desc">Congressional buy above $15k from a committee member relevant to the sector. Filed under STOCK Act within 45 days.</div>
+      <div class="pillar-source">Source: Quiver Quantitative</div>
+    </div>
+    <div class="pillar-card">
+      <div class="pillar-id b">P3b · GOV CONTRACT</div>
+      <div class="pillar-name">DoD / DARPA / FDA award</div>
+      <div class="pillar-desc">News post containing anchor contract keywords: DoD, DARPA, MDA, Pentagon, IDIQ. Generic "approval" or "grant" does not fire.</div>
+      <div class="pillar-source">Source: Finnhub, Substack</div>
+    </div>
+    <div class="pillar-card">
+      <div class="pillar-id b">P3c · SOCIAL VELOCITY</div>
+      <div class="pillar-name">Mention velocity +150%</div>
+      <div class="pillar-desc">24h post count versus 7-day baseline. Fires at +150% velocity (2.5x baseline). Moderate score at +50%.</div>
+      <div class="pillar-source">Source: ApeWisdom, Substack</div>
+    </div>
+    <div class="pillar-card">
+      <div class="pillar-id p">P4 · META-CONVERGENCE</div>
+      <div class="pillar-name">Non-linear boost</div>
+      <div class="pillar-desc">+1.5 added to composite when 4+ independent pillars fire simultaneously. Independent sources agreeing is worth more than their sum.</div>
+      <div class="pillar-source">Internal computation</div>
+    </div>
+    <div class="pillar-card">
+      <div class="pillar-id r">P6 · CATALYST</div>
+      <div class="pillar-name">Binary event 14–45 days</div>
+      <div class="pillar-desc">Earnings, FDA PDUFA action date, or FOMC within the window. Sweet spot 20–40 days. Required for Super Signal — no catalyst, no trade.</div>
+      <div class="pillar-source">Source: Finnhub, FDA calendar</div>
+    </div>
+    <div class="pillar-card">
+      <div class="pillar-id g">P7 · QUANT MOMENTUM</div>
+      <div class="pillar-name">Flow + price alignment</div>
+      <div class="pillar-desc">Institutional flow polarity aligned with 5-day price trend. Score 1.0 when both agree, 0.5 when one is absent, 0 when they conflict.</div>
+      <div class="pillar-source">Source: Sentiment scores, Polygon</div>
+    </div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- EXAMPLE SIGNAL -->
+<div class="section">
+  <div class="section-label">Live example</div>
+  <h2 class="section-title">What a real signal <em>looks like</em></h2>
+  <div class="prose"><p>This is the MU (Micron Technology) Super Signal generated by the system on May 28, 2026. It triggered automatic structure pricing and was queued for execution at market open.</p></div>
+
+  <div class="signal-example">
+    <div class="signal-header">
+      <span class="signal-ticker">MU</span>
+      <span class="sig-badge sig-short">SHORT</span>
+      <span class="sig-badge sig-super">SUPER SIGNAL</span>
+      <span class="sig-badge" style="background:rgba(245,158,11,0.1);color:#f59e0b;border:1px solid rgba(245,158,11,0.3);">EARNINGS · 25d</span>
+      <div class="sig-score">
+        <div class="sig-score-val">4.50</div>
+        <div class="sig-score-sub">4 pillars</div>
+      </div>
+    </div>
+    <div class="pillar-row"><span class="pillar-icon">✅</span><span class="pillar-row-name">P1_scalability</span><span class="pillar-row-score">[1.0]</span><span class="pillar-row-ev">MU is in the high-liquidity options-eligible watchlist</span></div>
+    <div class="pillar-row"><span class="pillar-icon">✅</span><span class="pillar-row-name">P2_options_flow</span><span class="pillar-row-score">[0.5]</span><span class="pillar-row-ev">Unusual options activity: max_score=100, mixed flow (P/C=0.42), 11B/9Br rows</span></div>
+    <div class="pillar-row"><span class="pillar-icon">□</span><span class="pillar-row-name">P3a_congressional</span><span class="pillar-row-score" style="color:var(--t3)">[0.0]</span><span class="pillar-row-ev" style="color:var(--t3)">No significant congressional buys</span></div>
+    <div class="pillar-row"><span class="pillar-icon">✅</span><span class="pillar-row-name">P4_meta_convergence</span><span class="pillar-row-score">[1.0]</span><span class="pillar-row-ev">Non-linear boost applied: 4 independent pillars fired</span></div>
+    <div class="pillar-row"><span class="pillar-icon">□</span><span class="pillar-row-name">P3b_gov_contract</span><span class="pillar-row-score" style="color:var(--t3)">[0.0]</span><span class="pillar-row-ev" style="color:var(--t3)">No government contract signals in recent posts</span></div>
+    <div class="pillar-row"><span class="pillar-icon">✅</span><span class="pillar-row-name">P6_catalyst</span><span class="pillar-row-score">[1.0]</span><span class="pillar-row-ev">Earnings (Q3 2026) on 2026-06-23 (25d), EPS est=19.90 [sweet spot]</span></div>
+    <div class="pillar-row"><span class="pillar-icon">✅</span><span class="pillar-row-name">P7_quant_momentum</span><span class="pillar-row-score">[0.5]</span><span class="pillar-row-ev">Partial: inst_flow=−0.500 (bearish) but price 5d=+21.2% (conflicting)</span></div>
+    <div class="signal-struct">
+      <strong>BEAR PUT SPREAD</strong>
+      <span>BUY PUT $970 / SELL PUT $950 · exp Jul 17, 2026 · 49 DTE</span>
+      <span style="margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--t3);">Est. debit ~$1,129 · Max loss ~$1,129 · Estimated — verify vs broker</span>
+    </div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- PIPELINE -->
+<div class="section">
+  <div class="section-label">Architecture</div>
+  <h2 class="section-title">How it runs <em>autonomously</em></h2>
+  <div class="prose"><p>The full pipeline runs every 15 minutes via Windows Task Scheduler. No human is required in the loop. The dashboard shows the current state at any time.</p></div>
+
+  <div class="pipeline">
+    <div class="pipe-step">
+      <div class="pipe-spine"><div class="pipe-dot green">1</div><div class="pipe-line"></div></div>
+      <div class="pipe-content"><h4>INGEST — every 15 min</h4><p>10 adapters run in parallel: ApeWisdom, Finnhub, Unusual Whales, Quiver (congressional), Substack, Yahoo Finance, Kalshi, Massive (price), Earnings Calendar, Massive History. ~73k posts ingested per 24h.</p></div>
+    </div>
+    <div class="pipe-step">
+      <div class="pipe-spine"><div class="pipe-dot green">2</div><div class="pipe-line"></div></div>
+      <div class="pipe-content"><h4>SCORE — every 15 min</h4><p>FinBERT sentiment scoring on all new posts. Institutional flow polarity computed. Velocity signals calculated per ticker. ~73k posts scored per 24h.</p></div>
+    </div>
+    <div class="pipe-step">
+      <div class="pipe-spine"><div class="pipe-dot amber">3</div><div class="pipe-line"></div></div>
+      <div class="pipe-content"><h4>CONVERGENCE SCAN — every 15 min</h4><p>All 1,025 active tickers scored across 7 pillars. Super signals identified (score ≥ 4.0, 4+ pillars, binary catalyst required). Structure plan auto-attached to every super signal. Results written to convergence_signals table.</p></div>
+    </div>
+    <div class="pipe-step">
+      <div class="pipe-spine"><div class="pipe-dot blue">4</div><div class="pipe-line"></div></div>
+      <div class="pipe-content"><h4>OPTIONS EXECUTION — market hours only</h4><p>Macro check (RISK_OFF blocks all entries). Already-executed check. Cash availability check. Structure retrieved from DB (no repricing). Order submitted to Alpaca paper API. Limit order at estimated debit +10% buffer for fill probability.</p></div>
+    </div>
+    <div class="pipe-step">
+      <div class="pipe-spine"><div class="pipe-dot purple">5</div></div>
+      <div class="pipe-content"><h4>DASHBOARD — live at localhost:8080</h4><p>Multi-Pillar Convergence view shows all super signals with full pillar breakdown, structure recommendation, and "View Structure Plan" modal. KPI strip shows macro state, super signal count, and P&amp;L. Refreshes on every load.</p></div>
+    </div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- GUARDS -->
+<div class="section">
+  <div class="section-label">Risk management</div>
+  <h2 class="section-title">Guards that protect <em>capital</em></h2>
+  <div class="prose"><p>The system applies a layered set of guards before any trade is placed. These cannot be bypassed by the scheduler — they run on every execution cycle.</p></div>
+
+  <table class="guard-table">
+    <thead><tr><th>Guard</th><th>Rule</th><th>Consequence</th></tr></thead>
+    <tbody>
+      <tr><td>Macro state</td><td>RISK_OFF blocks all new options entries</td><td><span class="tag tag-r">Skip all</span></td></tr>
+      <tr><td>Market hours</td><td>No orders outside 9:30 AM–4:00 PM ET</td><td><span class="tag tag-r">Skip all</span></td></tr>
+      <tr><td>Signal age</td><td>Only execute signals from last 20 minutes (fresh scan)</td><td><span class="tag tag-a">Skip stale</span></td></tr>
+      <tr><td>Already executed</td><td>One options trade per ticker per calendar day</td><td><span class="tag tag-a">Skip duplicate</span></td></tr>
+      <tr><td>Cash floor</td><td>Stop if cash &lt; 40% of equity</td><td><span class="tag tag-r">Skip all</span></td></tr>
+      <tr><td>Super signal gate</td><td>Structure only generated if score ≥ 4.0, pillars ≥ 4, catalyst present</td><td><span class="tag tag-a">No structure</span></td></tr>
+      <tr><td>Position sizing</td><td>Risk 2% of equity per trade. Max 5 contracts. Executor decides — not the structure recommender.</td><td><span class="tag tag-g">Capped</span></td></tr>
+      <tr><td>Options flow gate</td><td>P2 only votes on direction if Unusual Whales sentiment rows present (bullish_count or bearish_count &gt; 0)</td><td><span class="tag tag-a">Neutral P2</span></td></tr>
+      <tr><td>Catalyst required</td><td>No catalyst in 14–45 day window = no super signal, regardless of score</td><td><span class="tag tag-r">No signal</span></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<hr class="divider">
+
+<!-- PHASE 1 + 2 -->
+<div class="section">
+  <div class="section-label">Roadmap</div>
+  <h2 class="section-title">Phase 1 and <em>Phase 2</em></h2>
+
+  <div class="phase-row">
+    <div class="phase-card active">
+      <div class="phase-badge p1">Phase 1 — Active now</div>
+      <h3>Prove the edge</h3>
+      <div class="target green">$50k → $150k</div>
+      <ul>
+        <li>Paper trading on Alpaca with real signal logic and real market prices</li>
+        <li>Track hit rate on every super signal: did the trade make money?</li>
+        <li>Validate that 4-pillar convergence + catalyst has a positive expected value</li>
+        <li>Tune thresholds based on results: UNUSUAL_SCORE_MIN, catalyst window, pillar weights</li>
+        <li>Build options P&amp;L tracking into the dashboard with actual fill prices</li>
+        <li>Close out positions at 50% max gain target automatically</li>
+        <li>Run for 60–90 days minimum before drawing any conclusions</li>
+        <li>Success = hit rate &gt; 55% on super signals, Sharpe &gt; 1.2 on paper</li>
+      </ul>
+    </div>
+    <div class="phase-card future">
+      <div class="phase-badge p2">Phase 2 — After validation</div>
+      <h3>Deploy real capital</h3>
+      <div class="target blue">$50k → $500k</div>
+      <ul>
+        <li>Switch from paper to live Alpaca account with $50k real capital</li>
+        <li>Replace BS/HV30 pricing with live IV feed (Unusual Whales or CBOE)</li>
+        <li>Validate listed strikes against actual options chain before every order</li>
+        <li>Add position management: auto-close at 50% gain or 100% loss</li>
+        <li>Add IV rank filter — only trade when IV rank &lt; 50 (options relatively cheap)</li>
+        <li>Add earnings surprise predictor from analyst estimate dispersion</li>
+        <li>Expand catalyst types: activist investor filings, merger arbitrage events</li>
+        <li>Scale position sizing with proven Kelly fraction as edge is confirmed</li>
+      </ul>
+    </div>
+  </div>
+
+  <div style="margin-top: 24px; padding: 20px 24px; background: var(--bg2); border: 1px solid var(--border); border-left: 3px solid var(--a); border-radius: 0 8px 8px 0;">
+    <div style="font-family: var(--mono); font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--a); margin-bottom: 10px;">The key constraint</div>
+    <p style="font-size: 14px; color: var(--t2); line-height: 1.7;">Phase 2 does not start until Phase 1 produces at least 30 resolved super signal trades with documented outcomes. Edge without evidence is gambling. The system is built to find edge — Phase 1 is how we prove it exists.</p>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- CAPITAL PATH -->
+<div class="section">
+  <div class="section-label">Capital path</div>
+  <h2 class="section-title">The <em>trajectory</em></h2>
+  <div class="prose"><p>Not a projection — a target structure. Each step unlocks the next. The system scales position sizing automatically as equity grows, so compounding is built in.</p></div>
+
+  <div class="cap-track">
+    <div class="cap-node current">
+      <div class="cap-val green">$50k</div>
+      <div class="cap-label">Start<br>Paper Phase 1</div>
+    </div>
+    <div class="cap-node">
+      <div class="cap-val">$150k</div>
+      <div class="cap-label">Phase 1<br>target</div>
+    </div>
+    <div class="cap-node">
+      <div class="cap-val">$250k</div>
+      <div class="cap-label">Phase 2<br>live trading</div>
+    </div>
+    <div class="cap-node">
+      <div class="cap-val">$500k</div>
+      <div class="cap-label">Full<br>deployment</div>
+    </div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- SPRINT TRACKER -->
+<div class="section">
+  <div class="section-label">What was built</div>
+  <h2 class="section-title">Sprint 11 — <em>complete</em></h2>
+  <div class="prose"><p>Sprint 11 replaced AlphaHound's divergence scoring brain with the Multi-Pillar Convergence Engine. Every component was built in-place — no fork, no new codebase. The system is fully operational.</p></div>
+
+  <div class="sprint-grid">
+    <div class="sprint-item done">
+      <div class="sprint-num">S11-1</div>
+      <div class="sprint-name">Quiver write bug fix</div>
+      <div class="sprint-status done">✓ Complete</div>
+    </div>
+    <div class="sprint-item done">
+      <div class="sprint-num">S11-2</div>
+      <div class="sprint-name">Multi-Pillar Convergence Engine</div>
+      <div class="sprint-status done">✓ Complete</div>
+    </div>
+    <div class="sprint-item done">
+      <div class="sprint-num">S11-3</div>
+      <div class="sprint-name">Catalyst Calendar (PDUFA + FOMC)</div>
+      <div class="sprint-status done">✓ Complete</div>
+    </div>
+    <div class="sprint-item done">
+      <div class="sprint-num">S11-4</div>
+      <div class="sprint-name">Options Structure Recommender</div>
+      <div class="sprint-status done">✓ Complete</div>
+    </div>
+    <div class="sprint-item done">
+      <div class="sprint-num">S11-5</div>
+      <div class="sprint-name">Dashboard Convergence View</div>
+      <div class="sprint-status done">✓ Complete</div>
+    </div>
+    <div class="sprint-item done">
+      <div class="sprint-num">S11-6</div>
+      <div class="sprint-name">Auto-attach structure to signals</div>
+      <div class="sprint-status done">✓ Complete</div>
+    </div>
+    <div class="sprint-item done">
+      <div class="sprint-num">S11-7</div>
+      <div class="sprint-name">Options executor + Alpaca API</div>
+      <div class="sprint-status done">✓ Complete</div>
+    </div>
+  </div>
+</div>
+
+<!-- DISCLAIMER -->
+<div class="disclaimer">
+  <p>This document is internal technical documentation for AlphaHound, a proprietary algorithmic trading research system operated by Quantale. All trading described is paper trading (simulated). Phase 1 pricing uses Black-Scholes estimates on 30-day historical volatility — actual options prices will differ. This is not investment advice. Past paper performance is not indicative of future live results. All live capital deployment decisions require independent validation of the edge demonstrated in Phase 1.</p>
+</div>
+
+</body>
+</html>

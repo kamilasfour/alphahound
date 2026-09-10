@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AlphaHound — What We Actually Built</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;700;800&family=Syne+Mono&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,400&display=swap');
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --bg:#080b0f;--bg2:#0d1117;--bg3:#131920;--bg4:#1a2230;
+    --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
+    --t1:#f0f4f8;--t2:#9ba8b8;--t3:#4d5a6a;
+    --g:#00e5a0;--gd:rgba(0,229,160,0.10);--gb:rgba(0,229,160,0.28);
+    --r:#ff4d6d;--rd:rgba(255,77,109,0.10);--rb:rgba(255,77,109,0.28);
+    --a:#ffb627;--ad:rgba(255,182,39,0.10);--ab:rgba(255,182,39,0.28);
+    --b:#4d9fff;--bd:rgba(77,159,255,0.10);--bb:rgba(77,159,255,0.28);
+    --mono:'Syne Mono',monospace;--head:'Syne',sans-serif;--body:'DM Sans',sans-serif
+  }
+  html{background:var(--bg);color:var(--t1);font-family:var(--body);font-size:15px;line-height:1.75}
+  body{max-width:860px;margin:0 auto;padding:64px 32px 120px}
+  h1{font-family:var(--head);font-size:clamp(40px,7vw,72px);font-weight:800;line-height:1.0;color:var(--t1);margin-bottom:10px;letter-spacing:-0.02em}
+  h1 span{color:var(--g)}
+  h2{font-family:var(--head);font-size:26px;font-weight:700;color:var(--t1);margin:60px 0 16px;line-height:1.2;letter-spacing:-0.01em}
+  h2::before{content:'//';font-family:var(--mono);font-size:14px;color:var(--g);margin-right:10px;opacity:0.7}
+  h3{font-family:var(--head);font-size:16px;font-weight:700;color:var(--t1);margin:24px 0 8px}
+  p{color:var(--t2);margin-bottom:16px;line-height:1.8}
+  p:last-child{margin-bottom:0}
+  strong{color:var(--t1);font-weight:500}
+  .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:var(--g);margin-bottom:20px;opacity:0.8}
+  .subtitle{font-size:18px;color:var(--t2);line-height:1.7;max-width:640px;margin-bottom:52px}
+  hr{border:none;border-top:1px solid var(--border);margin:52px 0}
+  .box{border-radius:8px;padding:20px 24px;margin:24px 0}
+  .box-g{background:var(--gd);border:1px solid var(--gb);border-left:3px solid var(--g)}
+  .box-r{background:var(--rd);border:1px solid var(--rb);border-left:3px solid var(--r)}
+  .box-a{background:var(--ad);border:1px solid var(--ab);border-left:3px solid var(--a)}
+  .box-b{background:var(--bd);border:1px solid var(--bb);border-left:3px solid var(--b)}
+  .box-label{font-family:var(--mono);font-size:10px;letter-spacing:0.18em;text-transform:uppercase;margin-bottom:8px;font-weight:500}
+  .box-g .box-label{color:var(--g)}.box-r .box-label{color:var(--r)}.box-a .box-label{color:var(--a)}.box-b .box-label{color:var(--b)}
+  .box p{font-size:14px;color:var(--t1)}
+  .compare{width:100%;border-collapse:collapse;margin:24px 0;font-size:13px}
+  .compare th{font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:0.12em;text-transform:uppercase;background:var(--bg3);padding:10px 14px;border:1px solid var(--border2);text-align:left;color:var(--t3)}
+  .compare td{padding:11px 14px;border:1px solid var(--border);color:var(--t2);vertical-align:top;line-height:1.5}
+  .compare tr:hover td{background:var(--bg3)}
+  .compare td:first-child{font-family:var(--mono);font-size:11px;font-weight:500;color:var(--t1);white-space:nowrap}
+  .bad{color:var(--r)}.good{color:var(--g)}
+  .steps{margin:24px 0}
+  .step{display:flex;gap:20px;margin-bottom:28px}
+  .step-num{font-family:var(--mono);font-size:12px;font-weight:500;color:var(--bg);background:var(--g);border-radius:50%;width:30px;height:30px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:3px}
+  .step-body h4{font-family:var(--head);font-size:14px;font-weight:700;color:var(--t1);margin-bottom:6px}
+  .step-body h4 span{color:var(--g);font-family:var(--mono);font-size:11px;font-weight:400;margin-right:8px;opacity:0.8}
+  .step-body p{font-size:13px;color:var(--t2);margin-bottom:0}
+  .signal-box{background:var(--bg2);border:1px solid var(--border2);border-radius:10px;overflow:hidden;margin:24px 0}
+  .signal-header{background:var(--bg3);padding:16px 20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;border-bottom:1px solid var(--border2)}
+  .sig-ticker{font-family:var(--head);font-size:28px;font-weight:800;color:var(--t1);letter-spacing:-0.02em}
+  .sig-tag{font-family:var(--mono);font-size:10px;padding:3px 10px;border-radius:4px;letter-spacing:0.1em;font-weight:500}
+  .tag-short{background:var(--rd);color:var(--r);border:1px solid var(--rb)}
+  .tag-super{background:var(--gd);color:var(--g);border:1px solid var(--gb)}
+  .tag-earn{background:var(--ad);color:var(--a);border:1px solid var(--ab)}
+  .sig-score{margin-left:auto;text-align:right}
+  .sig-score-n{font-family:var(--mono);font-size:28px;font-weight:500;color:var(--g);line-height:1}
+  .sig-score-l{font-family:var(--mono);font-size:10px;color:var(--t3);margin-top:2px}
+  .p-row{display:flex;gap:12px;padding:9px 20px;border-bottom:1px solid var(--border);font-size:13px;align-items:flex-start}
+  .p-row:last-child{border-bottom:none}
+  .p-row:hover{background:var(--bg3)}
+  .p-icon{width:16px;flex-shrink:0;margin-top:1px;font-size:12px}
+  .p-name{font-family:var(--mono);font-size:10px;color:var(--t3);width:140px;flex-shrink:0;margin-top:2px}
+  .p-score{font-family:var(--mono);font-size:11px;width:32px;flex-shrink:0;margin-top:2px;font-weight:500}
+  .p-score.fire{color:var(--g)}.p-score.zero{color:var(--t3)}
+  .p-ev{color:var(--t2);flex:1;line-height:1.5}
+  .p-ev.fired{color:var(--t1)}
+  .signal-struct{background:var(--bd);border-top:1px solid var(--bb);padding:14px 20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .struct-label{font-family:var(--mono);font-size:10px;color:var(--b);letter-spacing:0.12em;font-weight:500}
+  .struct-name{font-family:var(--head);font-size:15px;font-weight:700;color:var(--t1)}
+  .struct-legs{font-family:var(--mono);font-size:12px;color:var(--t2)}
+  .struct-debit{font-family:var(--mono);font-size:12px;color:var(--t3);margin-left:auto}
+  .econ-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin:20px 0}
+  .econ-card{background:var(--bg2);border:1px solid var(--border2);border-radius:8px;padding:16px}
+  .econ-label{font-family:var(--mono);font-size:9px;letter-spacing:0.14em;text-transform:uppercase;color:var(--t3);margin-bottom:8px}
+  .econ-val{font-family:var(--mono);font-size:20px;font-weight:500;color:var(--t1);line-height:1}
+  .econ-val.g{color:var(--g)}.econ-val.r{color:var(--r)}.econ-val.a{color:var(--a)}
+  .econ-sub{font-size:11px;color:var(--t3);margin-top:6px;line-height:1.4}
+  .timeline{margin:24px 0;border-left:2px solid var(--border2);padding-left:28px}
+  .tl-item{position:relative;margin-bottom:32px}
+  .tl-item::before{content:'';position:absolute;left:-35px;top:5px;width:12px;height:12px;border-radius:50%;background:var(--bg);border:2px solid var(--t3)}
+  .tl-item.done::before{background:var(--g);border-color:var(--g);box-shadow:0 0 8px var(--g)}
+  .tl-item.now::before{background:var(--a);border-color:var(--a);box-shadow:0 0 8px var(--a)}
+  .tl-time{font-family:var(--mono);font-size:11px;color:var(--t3);margin-bottom:5px;letter-spacing:0.08em}
+  .tl-title{font-family:var(--head);font-size:15px;font-weight:700;color:var(--t1);margin-bottom:5px}
+  .tl-item.done .tl-title{color:var(--g)}.tl-item.now .tl-title{color:var(--a)}
+  .tl-desc{font-size:13px;color:var(--t2);line-height:1.65}
+  .phase-pair{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:24px 0}
+  @media(max-width:600px){.phase-pair{grid-template-columns:1fr}}
+  .phase-card{border-radius:10px;padding:24px}
+  .phase-card.p1{background:var(--gd);border:1px solid var(--gb)}
+  .phase-card.p2{background:var(--bd);border:1px solid var(--bb)}
+  .phase-badge{font-family:var(--mono);font-size:10px;letter-spacing:0.15em;text-transform:uppercase;margin-bottom:12px;display:block;font-weight:500}
+  .phase-card.p1 .phase-badge{color:var(--g)}.phase-card.p2 .phase-badge{color:var(--b)}
+  .phase-card h3{font-family:var(--head);font-size:20px;font-weight:700;color:var(--t1);margin:0 0 8px}
+  .phase-target{font-family:var(--mono);font-size:24px;font-weight:500;margin:8px 0 18px}
+  .phase-card.p1 .phase-target{color:var(--g)}.phase-card.p2 .phase-target{color:var(--b)}
+  .phase-card ul{list-style:none;padding:0}
+  .phase-card ul li{font-size:13px;color:var(--t2);padding:7px 0;border-bottom:1px solid var(--border);display:flex;gap:10px;line-height:1.5}
+  .phase-card ul li:last-child{border-bottom:none}
+  .phase-card.p1 ul li::before{content:'✓';color:var(--g);font-family:var(--mono);font-size:12px;flex-shrink:0;margin-top:1px}
+  .phase-card.p2 ul li::before{content:'→';color:var(--b);font-family:var(--mono);font-size:11px;flex-shrink:0;margin-top:2px}
+  .faq{list-style:none;padding:0}
+  .faq li{border-top:1px solid var(--border);padding:20px 0}
+  .faq li:last-child{border-bottom:1px solid var(--border)}
+  .faq-q{font-family:var(--head);font-size:16px;font-weight:700;color:var(--t1);margin-bottom:8px}
+  .faq-q::before{content:'Q·';font-family:var(--mono);font-size:11px;color:var(--g);margin-right:8px}
+  .faq-a{font-size:14px;color:var(--t2);line-height:1.75}
+  .faq-a strong{color:var(--t1)}
+  .ic{font-family:var(--mono);font-size:12px;background:var(--bg4);border:1px solid var(--border2);padding:2px 7px;border-radius:4px;color:var(--g)}
+  .footer{margin-top:80px;padding:20px 24px;background:var(--bg2);border:1px solid var(--border);border-radius:8px}
+  .footer p{font-family:var(--mono);font-size:11px;color:var(--t3);line-height:1.8;margin:0}
+</style>
+</head>
+<body>
+
+<div class="eyebrow">Quantale · AlphaHound · Sprint 11 · Internal briefing</div>
+<h1>What we actually<br><span>built</span> — and how it trades</h1>
+<p class="subtitle">A plain-English explanation of every component, why it matters, and exactly what happens from signal discovery to trade execution.</p>
+
+<hr>
+
+<h2>The problem with the old system</h2>
+<p>Before Sprint 11, AlphaHound was a <strong>divergence engine</strong>. It fired signals whenever institutional sentiment disagreed with retail sentiment. Real signals, but fundamental problems:</p>
+
+<table class="compare">
+  <thead><tr><th>Issue</th><th>Old divergence system</th><th>New convergence engine</th></tr></thead>
+  <tbody>
+    <tr><td>Signal volume</td><td class="bad">159 "super signals" per cycle — nearly everything fired</td><td class="good">2–4 genuine signals per cycle — only real setups</td></tr>
+    <tr><td>Catalyst</td><td class="bad">No requirement — signals fired on tickers with nothing approaching</td><td class="good">Binary catalyst required — earnings, FDA, FOMC within 14–45 days</td></tr>
+    <tr><td>Trade structure</td><td class="bad">Equity orders (buy/sell stock). No leverage, no defined risk</td><td class="good">Options — defined max loss, asymmetric upside</td></tr>
+    <tr><td>Explainability</td><td class="bad">A single "D score" number. No breakdown of why</td><td class="good">7 pillars, each with evidence. Every signal is fully explainable</td></tr>
+    <tr><td>Direction</td><td class="bad">P/C=0.00 with zero sentiment rows voted LONG — noise as signal</td><td class="good">P2 only votes direction if Unusual Whales has classified rows</td></tr>
+    <tr><td>False positives</td><td class="bad">MSFT fired because news contained "grant" and "approval"</td><td class="good">P3b requires DoD anchor keywords — generic language does not fire</td></tr>
+    <tr><td>Execution</td><td class="bad">Manual — you had to read the signal and decide</td><td class="good">Fully autonomous — scan → structure → execute, every 15 min</td></tr>
+  </tbody>
+</table>
+
+<div class="box box-g">
+  <div class="box-label">The game changer</div>
+  <p>The old system was a screener. The new system is a <strong>trading engine</strong>. It finds the setup, prices the trade, determines the structure, sizes the position, and places the order. Your job is to review what happened — not to make decisions.</p>
+</div>
+
+<hr>
+
+<h2>What the seven pillars actually measure</h2>
+<p>Think of it like a jury. You need a minimum of four independent jurors to agree before a verdict. Each looks at completely different evidence. When they all point the same way, the signal is real.</p>
+
+<div class="steps">
+  <div class="step">
+    <div class="step-num">P1</div>
+    <div class="step-body">
+      <h4><span>SCALABILITY</span>Can we actually trade this?</h4>
+      <p>Is this ticker liquid enough for options on a $50k account? MU, NVDA, ORCL score 1.0. A tiny biotech with no options volume scores 0. This is a gate — if it's 0, nothing else matters.</p>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">P2</div>
+    <div class="step-body">
+      <h4><span>OPTIONS FLOW</span>Is smart money making a directional bet?</h4>
+      <p>Unusual Whales tracks large options sweeps across all exchanges. We check whether the sweep is call-dominant or put-dominant AND whether Unusual Whales has classified the rows as "bullish" or "bearish." Raw volume without classification does not vote on direction — that was the bug that made everything look LONG.</p>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">P3</div>
+    <div class="step-body">
+      <h4><span>THREE SIGNALS</span>Congress, Gov contracts, Social velocity</h4>
+      <p><strong>P3a Congressional:</strong> A US Representative bought $15k+ of stock disclosed under the STOCK Act. Committee members weighted higher. <strong>P3b Gov Contract:</strong> News with DoD/DARPA/MDA/Pentagon anchor keywords — not just "approval." <strong>P3c Social velocity:</strong> 24h mentions 150%+ above the 7-day average — organic surge, not noise.</p>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">P4</div>
+    <div class="step-body">
+      <h4><span>META-CONVERGENCE</span>The boost</h4>
+      <p>When 4+ independent pillars fire simultaneously, we add +1.5 to the composite score. Independent sources converging is worth more than the sum of their parts — that's what separates a convergence trade from a trend follow.</p>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">P6</div>
+    <div class="step-body">
+      <h4><span>CATALYST</span>The event that forces resolution</h4>
+      <p><strong>Without a binary catalyst, there is no super signal — period.</strong> Earnings, FDA drug approval dates (PDUFA), and FOMC meetings create a moment where price must move. Options premium inflates into the event. If positioned correctly beforehand, you capture a large move for a defined, limited cost. Sweet spot is 20–40 days away.</p>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">P7</div>
+    <div class="step-body">
+      <h4><span>QUANT MOMENTUM</span>Do the numbers agree?</h4>
+      <p>Institutional flow polarity (FinBERT-scored STOCK Act filings) aligned with 5-day price trend. Both bullish → 1.0 LONG. Both bearish → 1.0 SHORT. Conflicting → 0.5. The quantitative confirmation layer.</p>
+    </div>
+  </div>
+</div>
+
+<hr>
+
+<h2>A real signal, dissected</h2>
+<p>The MU (Micron Technology) super signal the system produced on May 28, 2026. Walk through exactly what it means and why it triggered.</p>
+
+<div class="signal-box">
+  <div class="signal-header">
+    <span class="sig-ticker">MU</span>
+    <span class="sig-tag tag-short">SHORT</span>
+    <span class="sig-tag tag-super">SUPER SIGNAL</span>
+    <span class="sig-tag tag-earn">EARNINGS · 25 days</span>
+    <div class="sig-score">
+      <div class="sig-score-n">4.50</div>
+      <div class="sig-score-l">composite · 4 pillars</div>
+    </div>
+  </div>
+  <div>
+    <div class="p-row"><span class="p-icon">✅</span><span class="p-name">P1_scalability</span><span class="p-score fire">[1.0]</span><span class="p-ev fired">MU is in the high-liquidity options-eligible watchlist — liquid options market confirmed</span></div>
+    <div class="p-row"><span class="p-icon">✅</span><span class="p-name">P2_options_flow</span><span class="p-score fire">[0.5]</span><span class="p-ev fired">max_score=100, mixed flow (P/C=0.42), 11 bullish / 9 bearish rows — high activity, mixed direction</span></div>
+    <div class="p-row"><span class="p-icon">□</span><span class="p-name">P3a_congressional</span><span class="p-score zero">[0.0]</span><span class="p-ev">No congressional buys above $15k in last 45 days</span></div>
+    <div class="p-row"><span class="p-icon">✅</span><span class="p-name">P4_meta_convergence</span><span class="p-score fire">[1.0]</span><span class="p-ev fired">+1.5 boost applied — 4 independent pillars fired simultaneously</span></div>
+    <div class="p-row"><span class="p-icon">□</span><span class="p-name">P3b_gov_contract</span><span class="p-score zero">[0.0]</span><span class="p-ev">No DoD/DARPA contract signals in recent posts</span></div>
+    <div class="p-row"><span class="p-icon">□</span><span class="p-name">P3c_social_velocity</span><span class="p-score zero">[0.0]</span><span class="p-ev">Flat — 140 posts/24h vs 142 baseline. Need +150% to fire</span></div>
+    <div class="p-row"><span class="p-icon">✅</span><span class="p-name">P6_catalyst</span><span class="p-score fire">[1.0]</span><span class="p-ev fired">Earnings Q3 2026 on June 23 — 25 days away, sweet spot, EPS estimate $19.90</span></div>
+    <div class="p-row"><span class="p-icon">✅</span><span class="p-name">P7_quant_momentum</span><span class="p-score fire">[0.5]</span><span class="p-ev fired">Institutional flow polarity −0.500 (net sellers) — partial: price +21% over 5d conflicts</span></div>
+  </div>
+  <div class="signal-struct">
+    <span class="struct-label">OPTIONS STRUCTURE</span>
+    <span class="struct-name">Bear Put Spread</span>
+    <span class="struct-legs">BUY PUT $970 / SELL PUT $950 · Jul 17, 2026 · 49 DTE</span>
+    <span class="struct-debit">Est. debit ~$1,129 · Max loss ~$1,129</span>
+  </div>
+</div>
+
+<h3>Why SHORT and not LONG?</h3>
+<p>P7 shows institutional flow polarity −0.500 — STOCK Act filings show net sellers in MU. P2 is mixed (11 bullish / 9 bearish) so it doesn't vote strongly either way. SHORT wins. Price being up +21% over 5 days is the conflict — institutions selling into strength is a classic distribution pattern. The system correctly flags this SHORT with partial P7 score.</p>
+
+<h3>Why a Bear Put Spread and not just buying puts?</h3>
+<p>A bear put spread is a <strong>defined-risk, defined-reward</strong> structure. You pay $1,129 to enter — that is your maximum possible loss, it cannot go higher. Maximum gain is ~$871 if MU closes below $950 at expiry. A naked put costs more upfront and if MU doesn't move you lose 100% of premium to time decay. The spread limits both risk and reward, but the R/R is acceptable when hit rate is above 50%.</p>
+
+<hr>
+
+<h2>What one trade looks like in dollars</h2>
+
+<div class="econ-grid">
+  <div class="econ-card"><div class="econ-label">Account equity</div><div class="econ-val">$50,000</div><div class="econ-sub">New Alpaca paper account</div></div>
+  <div class="econ-card"><div class="econ-label">Risk per trade</div><div class="econ-val a">2%</div><div class="econ-sub">= $1,000 target risk</div></div>
+  <div class="econ-card"><div class="econ-label">MU trade cost</div><div class="econ-val">~$1,129</div><div class="econ-sub">1 contract · est. debit</div></div>
+  <div class="econ-card"><div class="econ-label">Max loss</div><div class="econ-val r">$1,129</div><div class="econ-sub">If MU closes above $970</div></div>
+  <div class="econ-card"><div class="econ-label">Max gain</div><div class="econ-val g">~$871</div><div class="econ-sub">If MU closes below $950</div></div>
+  <div class="econ-card"><div class="econ-label">Exit target</div><div class="econ-val">50%</div><div class="econ-sub">Exit at ~$435 gain</div></div>
+</div>
+
+<div class="box box-a">
+  <div class="box-label">Important caveat</div>
+  <p>These prices are <strong>estimates</strong> using Black-Scholes on 30-day historical volatility. Actual market prices differ — especially pre-earnings when IV inflates. Verify the actual bid/ask on the Alpaca or thinkorswim options chain before placing a live order. The system flags this on every output.</p>
+</div>
+
+<hr>
+
+<h2>Exactly what happens, step by step</h2>
+<p>The precise sequence from signal development to trade logged. Nothing requires human involvement except initial setup.</p>
+
+<div class="steps">
+  <div class="step"><div class="step-num">1</div><div class="step-body"><h4><span>EVERY 5 MIN</span>Data ingestion</h4><p>10 adapters run in parallel. ApeWisdom pulls Reddit mentions. Unusual Whales pulls options flow. Quiver pulls congressional filings. Finnhub pulls news. Polygon pulls prices. ~73,000 posts per day flow into TimescaleDB on the Windows Server.</p></div></div>
+  <div class="step"><div class="step-num">2</div><div class="step-body"><h4><span>EVERY 15 MIN</span>Sentiment scoring</h4><p>FinBERT (a financial language model) reads every new post and assigns a polarity score from −1.0 (very bearish) to +1.0 (very bullish). Congressional filings become institutional flow polarity. Social posts become retail sentiment. These feed P7 and P3c.</p></div></div>
+  <div class="step"><div class="step-num">3</div><div class="step-body"><h4><span>EVERY 15 MIN</span>Convergence scan — 1,025 tickers</h4><p>The engine scores all active tickers across 7 pillars in ~90 seconds. For each ticker it reads from 6 database tables: options_flow, institutional_positions, sentiment_scores, price_snapshots, earnings_calendar, pdufa_calendar. Results written to the <span class="ic">convergence_signals</span> table.</p></div></div>
+  <div class="step"><div class="step-num">4</div><div class="step-body"><h4><span>ON DETECTION</span>Structure plan auto-attached</h4><p>When score ≥ 4.0, 4+ pillars, catalyst present: the structure recommender fires immediately. Reads current price, computes 30-day HV, runs Black-Scholes, picks structure (spread or strangle), selects strikes and expiry, stores the full trade plan in the database alongside the signal. The dashboard always shows the structure — no manual step.</p></div></div>
+  <div class="step"><div class="step-num">5</div><div class="step-body"><h4><span>9:30–4:00 ET</span>Execution check</h4><p>After every convergence scan during market hours: Is macro RISK_ON? Signal fresh (&lt;20 min)? Already traded this ticker today? Enough cash? All guards pass → constructs OCC symbol (e.g. <span class="ic">MU    260717P00970000</span>), calculates limit price at estimate +10%, submits order to Alpaca paper API.</p></div></div>
+  <div class="step"><div class="step-num">6</div><div class="step-body"><h4><span>IMMEDIATELY</span>Order logged and dashboard updated</h4><p>Every placed order written to <span class="ic">options_trade_log</span> with the Alpaca order ID, structure type, estimated debit, and signal context. Dashboard Convergence view reflects current state within minutes.</p></div></div>
+</div>
+
+<hr>
+
+<h2>What you do vs. what the system does</h2>
+
+<table class="compare">
+  <thead><tr><th>Task</th><th>System (automated)</th><th>You (human)</th></tr></thead>
+  <tbody>
+    <tr><td>Watch 1,025 tickers</td><td class="good">✓ Every 15 min, 24/7</td><td>Nothing</td></tr>
+    <tr><td>Score 7 pillars</td><td class="good">✓ Automatically</td><td>Nothing</td></tr>
+    <tr><td>Identify super signals</td><td class="good">✓ Automatically</td><td>Nothing</td></tr>
+    <tr><td>Price the structure</td><td class="good">✓ Black-Scholes on HV30</td><td>Verify vs actual chain</td></tr>
+    <tr><td>Place the order</td><td class="good">✓ Limit order to Alpaca</td><td>Nothing</td></tr>
+    <tr><td>Log the trade</td><td class="good">✓ options_trade_log</td><td>Nothing</td></tr>
+    <tr><td>Monitor dashboard</td><td class="good">✓ Refreshes every load</td><td>Review daily</td></tr>
+    <tr><td>Verify strike prices</td><td class="bad">❌ No live chain yet</td><td>Check before going live</td></tr>
+    <tr><td>Close winning positions</td><td class="bad">❌ Sprint 12</td><td>Manual close at 50% gain</td></tr>
+    <tr><td>Validate edge over time</td><td class="good">✓ Hit rate tracking built in</td><td>Review after 30 trades</td></tr>
+  </tbody>
+</table>
+
+<div class="box box-b">
+  <div class="box-label">The honest gap right now</div>
+  <p>Two manual steps remain: <strong>(1)</strong> verify estimated strikes match actual listed options before the first live trade. <strong>(2)</strong> Manually close positions at the 50% gain target. Sprint 12 closes both — live IV feed for accurate pricing and auto-close logic.</p>
+</div>
+
+<hr>
+
+<h2>Phase 1 and Phase 2</h2>
+
+<div class="phase-pair">
+  <div class="phase-card p1">
+    <span class="phase-badge">Phase 1 — Right now</span>
+    <h3>Prove the edge exists</h3>
+    <div class="phase-target">$50k paper</div>
+    <ul>
+      <li>Run on new $50k Alpaca paper account</li>
+      <li>System finds and trades super signals autonomously</li>
+      <li>Track every trade: entry, exit, P&L, pillars fired</li>
+      <li>Close manually at 50% gain or 100% loss until Sprint 12</li>
+      <li>After 30+ resolved trades, calculate hit rate + Sharpe</li>
+      <li>Success: hit rate &gt;55%, Sharpe &gt;1.2</li>
+      <li>Target: grow paper account to $150k</li>
+    </ul>
+  </div>
+  <div class="phase-card p2">
+    <span class="phase-badge">Phase 2 — After validation</span>
+    <h3>Deploy real capital</h3>
+    <div class="phase-target">$50k → $500k</div>
+    <ul>
+      <li>Open live Alpaca with $50k real capital</li>
+      <li>Replace estimated pricing with live IV feed</li>
+      <li>Validate strikes against actual chain before every order</li>
+      <li>Auto-close at 50% gain / 100% loss (no manual steps)</li>
+      <li>Add IV rank filter — only trade when options are cheap</li>
+      <li>Scale position sizing with confirmed Kelly fraction</li>
+      <li>Expand: activist filings, merger arbitrage catalysts</li>
+    </ul>
+  </div>
+</div>
+
+<div class="box box-a">
+  <div class="box-label">The gate between phases</div>
+  <p>Phase 2 does not open until Phase 1 produces <strong>at least 30 resolved trades with documented P&L</strong>. Not 30 signals — 30 completed trades, entered and exited. The paper result tells us whether the convergence thesis is real. Edge without evidence is gambling.</p>
+</div>
+
+<hr>
+
+<h2>Where we are and what comes next</h2>
+
+<div class="timeline">
+  <div class="tl-item done">
+    <div class="tl-time">Sprints 0–10 · Completed</div>
+    <div class="tl-title">Foundation — data pipeline, divergence engine, dashboard, execution</div>
+    <div class="tl-desc">Database, 10 adapters, FinBERT scoring, Alpaca integration, FastAPI dashboard. Divergence system ran but too many false positives, no options logic.</div>
+  </div>
+  <div class="tl-item done">
+    <div class="tl-time">Sprint 11 · Completed May 2026</div>
+    <div class="tl-title">Convergence engine — everything rebuilt</div>
+    <div class="tl-desc">7-pillar scoring, catalyst calendar (PDUFA + FOMC), structure recommender, dashboard convergence view, auto-attach, options executor. 159 false signals → 2–3 real signals. Full autonomous loop operational.</div>
+  </div>
+  <div class="tl-item now">
+    <div class="tl-time">Now · Phase 1 begins</div>
+    <div class="tl-title">First live paper trades on new $50k account</div>
+    <div class="tl-desc">MU bear put spread and ORCL bull call spread are the first live signals. Options Level 3 enabled. System places orders autonomously during market hours.</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-time">Sprint 12 · Next</div>
+    <div class="tl-title">Position management + live IV pricing</div>
+    <div class="tl-desc">Auto-close at 50% gain / 100% loss. Live options chain validation before placement. Hit rate dashboard with per-signal P&L. Removes the last manual steps.</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-time">60–90 days from now</div>
+    <div class="tl-title">Phase 1 review — go/no-go for real capital</div>
+    <div class="tl-desc">30+ resolved trades reviewed. If edge validated, Phase 2 opens with real capital. If not, diagnose which pillar is causing false positives and retune before committing real money.</div>
+  </div>
+</div>
+
+<hr>
+
+<h2>Questions you probably have</h2>
+
+<ul class="faq">
+  <li>
+    <div class="faq-q">Why options and not just buying stock?</div>
+    <div class="faq-a">Three reasons. <strong>Leverage:</strong> a $1,129 spread on MU gives exposure to a $95,000 notional position (100 shares × ~$950). <strong>Defined risk:</strong> you cannot lose more than the premium paid — the position cannot go against you beyond $1,129. <strong>Catalyst asymmetry:</strong> options premium inflates into binary events then collapses after. If positioned correctly beforehand, you capture a large move for a small, defined cost. You cannot replicate that payoff by buying stock.</div>
+  </li>
+  <li>
+    <div class="faq-q">What if the price estimate is way off?</div>
+    <div class="faq-a">The system labels all prices as <strong>estimated — verify against broker</strong>. Black-Scholes on HV30 is directionally correct but numerically off, especially pre-earnings when IV inflates. The limit order is placed at estimate +10% buffer. Sprint 12 replaces this with live IV data. For now, check thinkorswim or the Alpaca chain for the actual mid-price before going live.</div>
+  </li>
+  <li>
+    <div class="faq-q">What if macro goes RISK_OFF?</div>
+    <div class="faq-a">The system completely stops executing new orders when macro returns RISK_OFF. The convergence scan still runs and finds signals — it just doesn't execute them. When macro returns to RISK_ON or NEUTRAL, execution resumes automatically on the next cycle. Current macro state: <strong>NEUTRAL +0.147</strong> — execution is live.</div>
+  </li>
+  <li>
+    <div class="faq-q">How does the system decide how many contracts to buy?</div>
+    <div class="faq-a">Target risk = equity × 2%. On $50k that's $1,000. Contracts = floor($1,000 / max_loss_per_contract), capped at 5. For MU at $1,129 max loss: floor($1,000 / $1,129) = 0, rounds up to 1 contract. When the account reaches ~$113k, 2 contracts become appropriate. Sizing scales automatically with equity — no manual adjustment.</div>
+  </li>
+  <li>
+    <div class="faq-q">When do we close positions?</div>
+    <div class="faq-a"><strong>Phase 1 right now:</strong> Manual close. Check the dashboard daily. When the bear put spread is worth 50% more than you paid — close it. For MU at $1,129 debit, close when worth ~$1,564 (a $435 gain). Also close at 100% loss to preserve capital. <strong>Sprint 12:</strong> The system monitors open positions every cycle and submits closing orders automatically when the target is hit.</div>
+  </li>
+  <li>
+    <div class="faq-q">What does "the system learns from past trades" mean?</div>
+    <div class="faq-a">The <span class="ic">options_trade_log</span> records every trade with signal context — which pillars fired, composite score, catalyst type — and its P&L when closed. Over time the system can calculate: "when P6 fires with earnings 20–30 days away, what is the win rate?" or "do signals with congressional buy outperform?" This data allows pillar weights to be tuned based on evidence. The system improves as it accumulates trade history.</div>
+  </li>
+</ul>
+
+<div class="footer">
+  <p>Internal documentation — Quantale / AlphaHound / Sprint 11 · May 2026. All figures are paper trading estimates. Black-Scholes pricing on HV30 is approximate — actual options prices will differ. This is not investment advice. Phase 2 deployment requires independent validation of Phase 1 results across a minimum of 30 resolved trades.</p>
+</div>
+
+</body>
+</html>

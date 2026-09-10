@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AlphaHound — Signal Intelligence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/css/dashboard.css?v=13">
+</head>
+<body>
+<div class="shell">
+
+<!-- ════ TOPBAR ════ -->
+<header class="topbar">
+  <div class="logo-wrap">
+    <div class="logo">ALPHA<span class="logo-accent">/HOUND</span></div>
+    <div class="logo-sub">Signal Intelligence</div>
+  </div>
+  <div class="topbar-right">
+    <div id="et-time"></div>
+    <div class="status-pill pill-live" id="live-pill">
+      <div class="pill-dot dot-live" id="ldot"></div>
+      <span id="lstatus">LIVE</span>
+    </div>
+    <button class="brief-btn" onclick="openMorningBrief()">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="13" height="13"><circle cx="8" cy="8" r="3"/><line x1="8" y1="1" x2="8" y2="3"/><line x1="8" y1="13" x2="8" y2="15"/><line x1="1" y1="8" x2="3" y2="8"/><line x1="13" y1="8" x2="15" y2="8"/><line x1="3.05" y1="3.05" x2="4.46" y2="4.46"/><line x1="11.54" y1="11.54" x2="12.95" y2="12.95"/><line x1="12.95" y1="3.05" x2="11.54" y2="4.46"/><line x1="4.46" y1="11.54" x2="3.05" y2="12.95"/></svg>
+      Brief
+    </button>
+    <button class="refresh-btn" onclick="loadAll()">↻</button>
+  </div>
+</header>
+
+<!-- ════ MORNING BRIEF MODAL ════ -->
+<div id="brief-modal">
+  <div class="brief-panel">
+    <div class="brief-panel-hdr">
+      <div>
+        <div class="brief-title">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="13" height="13" style="margin-right:8px;vertical-align:-1px"><circle cx="8" cy="8" r="3"/><line x1="8" y1="1" x2="8" y2="3"/><line x1="8" y1="13" x2="8" y2="15"/><line x1="1" y1="8" x2="3" y2="8"/><line x1="13" y1="8" x2="15" y2="8"/><line x1="3.05" y1="3.05" x2="4.46" y2="4.46"/><line x1="11.54" y1="11.54" x2="12.95" y2="12.95"/><line x1="12.95" y1="3.05" x2="11.54" y2="4.46"/><line x1="4.46" y1="11.54" x2="3.05" y2="12.95"/></svg>Morning Brief
+        </div>
+        <div style="font-family:var(--mono);font-size:9px;color:var(--t3);margin-top:3px;letter-spacing:0.08em">MACRO · GLOBAL MARKETS · ACTIVE SIGNALS</div>
+      </div>
+      <button class="brief-close" onclick="closeMorningBrief()">✕</button>
+    </div>
+    <div class="brief-body" id="brief-body"></div>
+  </div>
+</div>
+
+<!-- ════ KPI STRIP ════ -->
+<div class="kpi-strip">
+  <div class="kpi"><div class="kpi-label">Tickers Watched</div><div class="kpi-val" id="k-universe">—</div><div class="kpi-sub">Active in engine</div></div>
+  <div class="kpi"><div class="kpi-label">Posts / 24h</div><div class="kpi-val" id="k-posts">—</div><div class="kpi-sub" id="k-posts-sub">Raw data ingested</div></div>
+  <div class="kpi"><div class="kpi-label">Scored / 24h</div><div class="kpi-val" id="k-scored">—</div><div class="kpi-sub" id="k-scored-sub">FinBERT scored</div></div>
+  <div class="kpi"><div class="kpi-label">Super Signals</div><div class="kpi-val" id="k-super" style="color:var(--g)">—</div><div class="kpi-sub">Score ≥ 4.0 · catalyst required</div></div>
+  <div class="kpi"><div class="kpi-label">Open Positions</div><div class="kpi-val" id="k-positions">—</div><div class="kpi-sub" id="k-pos-sub">Options trades live</div></div>
+  <div class="kpi"><div class="kpi-label">P&amp;L</div><div class="kpi-val" id="k-pl">—</div><div class="kpi-sub" id="k-pl-sub">Unrealized</div></div>
+  <div class="kpi"><div class="kpi-label">Macro</div><div class="kpi-val" id="k-macro" style="font-size:13px;padding-top:4px">—</div><div class="kpi-sub" id="k-macro-sub">Risk environment</div></div>
+  <div class="kpi"><div class="kpi-label">Engine</div><div class="kpi-val" id="k-eng" style="font-size:13px;padding-top:4px">—</div><div class="kpi-sub" id="k-eng-sub">Pipeline status</div></div>
+</div>
+
+<!-- ════ BODY ════ -->
+<div class="body">
+
+  <!-- ── SIDENAV ── -->
+  <nav class="sidenav">
+    <button class="snav-btn active" id="snav-checkin" onclick="showView('checkin')" title="Check-In — full system status, super signals, and engine state">
+      <svg class="snav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="15" height="15"><circle cx="8" cy="8" r="6"/><path d="M5 8l2 2 4-4"/></svg>
+      <span class="snav-label">Check</span>
+    </button>
+    <button class="snav-btn" id="snav-convergence" onclick="showView('convergence')" title="Multi-Pillar Convergence Engine — super signals with pillar breakdown and options structure plans">
+      <svg class="snav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="15" height="15"><circle cx="8" cy="8" r="2"/><path d="M8 2v2M8 12v2M2 8h2M12 8h2M3.5 3.5l1.5 1.5M11 11l1.5 1.5M11 3.5L9.5 5M5 11l-1.5 1.5"/></svg>
+      <span class="snav-label">Conv</span>
+    </button>
+    <button class="snav-btn" id="snav-portfolio" onclick="showView('portfolio')" title="Portfolio — account equity, open positions, unrealized P&L">
+      <svg class="snav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="15" height="15"><rect x="2" y="5" width="12" height="9" rx="1"/><path d="M5 5V4a3 3 0 0 1 6 0v1"/></svg>
+      <span class="snav-label">Portfolio</span>
+    </button>
+    <div class="snav-divider"></div>
+    <button class="snav-btn" id="snav-tradelog" onclick="showView('tradelog')" title="Trade log — all options trades, open positions, wins and losses">
+      <svg class="snav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="15" height="15"><rect x="2" y="2" width="12" height="12" rx="1"/><line x1="5" y1="6" x2="11" y2="6"/><line x1="5" y1="9" x2="9" y2="9"/></svg>
+      <span class="snav-label">Trades</span>
+    </button>
+    <button class="snav-btn" id="snav-sectors" onclick="showView('sectors')" title="Sector ETF intelligence — price performance plus sentiment rollup">
+      <svg class="snav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="15" height="15"><rect x="2" y="8" width="3" height="6"/><rect x="6.5" y="5" width="3" height="9"/><rect x="11" y="2" width="3" height="12"/></svg>
+      <span class="snav-label">Sectors</span>
+    </button>
+    <button class="snav-btn" id="snav-universe" onclick="showView('universe')" title="Full universe — price, momentum, and sentiment for every tracked ticker">
+      <svg class="snav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="15" height="15"><circle cx="8" cy="8" r="6"/><path d="M2 8h12M8 2c-2 2-2 8 0 12M8 2c2 2 2 8 0 12"/></svg>
+      <span class="snav-label">Universe</span>
+    </button>
+    <button class="snav-btn" id="snav-global" onclick="showView('global')" title="International ETFs and macro/rates instruments">
+      <svg class="snav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="15" height="15"><circle cx="8" cy="8" r="6"/><path d="M2 6h12M2 10h12"/></svg>
+      <span class="snav-label">Global</span>
+    </button>
+    <button class="snav-btn" id="snav-macro" onclick="showView('macro')" title="Global macro context — bonds, dollar, VIX, and trade sizing">
+      <svg class="snav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="15" height="15"><polyline points="2,12 6,7 9,10 14,4"/></svg>
+      <span class="snav-label">Macro</span>
+    </button>
+    <div class="snav-divider"></div>
+    <button class="snav-btn" id="snav-congress" onclick="showView('congress')" title="Congressional trades — STOCK Act disclosures">
+      <svg class="snav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="15" height="15"><path d="M2 13h12M3 13V8M8 13V5M13 13V8"/><path d="M1 8h14M8 2l7 6H1l7-6Z"/></svg>
+      <span class="snav-label">Congress</span>
+    </button>
+    <button class="snav-btn" id="snav-options" onclick="showView('options')" title="Options flow — unusual sweeps from Unusual Whales">
+      <svg class="snav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="15" height="15"><path d="M1 10c2-4 4-6 7-6s5 2 7 6"/><path d="M1 10c2 2 4 3 7 3s5-1 7-3"/></svg>
+      <span class="snav-label">Flow</span>
+    </button>
+    <button class="snav-btn" id="snav-health" onclick="showView('health')" title="Adapter health — data pipeline status and hit rate">
+      <svg class="snav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="15" height="15"><polyline points="1,8 4,8 5,4 7,12 9,6 11,8 15,8"/></svg>
+      <span class="snav-label">Health</span>
+    </button>
+    <button class="snav-btn" id="snav-earnings" onclick="showView('earnings')" title="Earnings calendar — upcoming catalysts">
+      <svg class="snav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="15" height="15"><rect x="2" y="3" width="12" height="11" rx="1"/><line x1="5" y1="2" x2="5" y2="5"/><line x1="11" y1="2" x2="11" y2="5"/><line x1="2" y1="7" x2="14" y2="7"/></svg>
+      <span class="snav-label">Earnings</span>
+    </button>
+    <div class="snav-divider"></div>
+    <button class="snav-btn" id="snav-alerts" onclick="showView('alerts')" title="Legacy divergence alerts">
+      <svg class="snav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="15" height="15"><path d="M8 2L14 13H2L8 2Z"/><line x1="8" y1="8" x2="8" y2="10"/><circle cx="8" cy="12" r=".5" fill="currentColor" stroke="none"/></svg>
+      <span class="snav-label">Alerts</span>
+    </button>
+    <button class="snav-btn" id="snav-map" onclick="showView('map')" title="Market heatmap — 5-day price performance">
+      <svg class="snav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="15" height="15"><rect x="1" y="1" width="6" height="6" rx="0.5"/><rect x="9" y="1" width="6" height="6" rx="0.5"/><rect x="1" y="9" width="6" height="6" rx="0.5"/><rect x="9" y="9" width="6" height="6" rx="0.5"/></svg>
+      <span class="snav-label">Map</span>
+    </button>
+  </nav>
+
+  <!-- ── MAIN PANEL ── -->
+  <main class="main">
+
+    <!-- CHECK-IN VIEW -->
+    <div class="view active" id="view-checkin">
+      <div class="view-hdr">
+        <span class="view-title">Check-In — Full System Status</span>
+        <button class="f-btn" onclick="loadCheckIn()" style="margin-left:auto">↻ Refresh</button>
+      </div>
+      <div class="alert-list" id="checkin-body" style="padding:0 16px 24px">
+        <div class="loading">Loading check-in data…</div>
+      </div>
+    </div>
+
+    <!-- CONVERGENCE VIEW -->
+    <div class="view" id="view-convergence">
+      <div class="view-hdr">
+        <span class="view-title">Multi-Pillar Convergence Engine</span>
+        <span class="view-badge" id="conv-badge">score ≥ 4.0 · 4+ pillars · catalyst required</span>
+        <button class="f-btn" onclick="loadConvergence()" style="margin-left:8px">&#x21BB; Refresh</button>
+      </div>
+      <div style="border-bottom:1px solid var(--b1);flex-shrink:0;">
+        <div style="padding:7px 16px;background:var(--s2);border-bottom:1px solid var(--b1);">
+          <span style="font-family:var(--mono);font-size:9px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--t3)">Open Options Positions</span>
+        </div>
+        <div id="opts-positions"><div class="loading">Loading positions…</div></div>
+      </div>
+      <div class="alert-list" id="conv-list"><div class="loading">Loading convergence signals…</div></div>
+    </div>
+
+    <!-- PORTFOLIO VIEW -->
+    <div class="view" id="view-portfolio">
+      <div class="view-hdr">
+        <span class="view-title">Portfolio — open positions &amp; account state</span>
+        <span class="view-badge" id="portfolio-badge">paper trading · Alpaca</span>
+      </div>
+      <div class="acct-grid">
+        <div class="acct-card"><div class="acct-label">Equity</div><div class="acct-val" id="p-equity">—</div></div>
+        <div class="acct-card"><div class="acct-label">Cash</div><div class="acct-val" id="p-cash">—</div></div>
+        <div class="acct-card"><div class="acct-label">Buying Power</div><div class="acct-val" id="p-bp">—</div></div>
+      </div>
+      <div class="mkt-status">
+        <div class="mkt-dot" id="mkt-dot" style="background:var(--t3)"></div>
+        <span class="mkt-label" id="mkt-label">Checking market status…</span>
+      </div>
+      <div class="tpl-row" id="tpl-row" style="display:none">
+        <span class="tpl-label">Total Unrealized P&amp;L</span>
+        <span class="tpl-val" id="tpl-val">$0.00</span>
+      </div>
+      <div class="alert-list" id="pos-list"><div class="loading">LOADING POSITIONS…</div></div>
+    </div>
+
+    <!-- TRADES VIEW -->
+    <div class="view" id="view-tradelog">
+      <div class="view-hdr">
+        <span class="view-title">Trades &amp; History</span>
+        <span class="view-badge" id="tradelog-badge">—</span>
+        <div style="margin-left:auto;display:flex;gap:0">
+          <button id="tt-opts" class="tt-btn tt-active" onclick="switchTradeTab('opts')">Options Trades</button>
+          <button id="tt-hist" class="tt-btn" onclick="switchTradeTab('hist')">Signal History</button>
+        </div>
+      </div>
+      <!-- Stats bar -->
+      <div class="pnl-stats">
+        <div class="pnl-card"><div class="pnl-label">Realized P&amp;L</div><div class="pnl-val" id="tl-total">$0</div></div>
+        <div class="pnl-card"><div class="pnl-label">Wins</div><div class="pnl-val" style="color:var(--g)" id="tl-wins">0</div></div>
+        <div class="pnl-card"><div class="pnl-label">Losses</div><div class="pnl-val" style="color:var(--r)" id="tl-losses">0</div></div>
+        <div class="pnl-card"><div class="pnl-label">Open</div><div class="pnl-val" style="color:var(--bl)" id="tl-open">0</div></div>
+      </div>
+      <!-- Options trades panel -->
+      <div id="tp-opts" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;min-height:0">
+        <div class="alert-list" id="tl-opts-list" style="flex:1"><div class="loading">Loading trades…</div></div>
+      </div>
+      <!-- Signal history panel -->
+      <div id="tp-hist" style="flex:1;overflow-y:auto;display:none;flex-direction:column;min-height:0">
+        <div style="padding:8px 16px;border-bottom:1px solid var(--b1);display:flex;align-items:center;gap:10px;background:var(--s2);flex-shrink:0">
+          <span style="font-family:var(--mono);font-size:10px;color:var(--t3)">Period:</span>
+          <select class="hist-range" id="h-days-tl" onchange="loadHistoryTab()">
+            <option value="1">Today</option>
+            <option value="7" selected>7 days</option>
+            <option value="14">14 days</option>
+            <option value="30">30 days</option>
+          </select>
+        </div>
+        <div class="alert-list" id="tl-hist-list"><div class="loading">Loading history…</div></div>
+      </div>
+    </div>
+
+    <!-- SECTORS VIEW -->
+    <div class="view" id="view-sectors">
+      <div class="view-hdr">
+        <span class="view-title">Sector Intelligence</span>
+        <span class="view-badge" id="sectors-badge">bar = constituent sentiment</span>
+      </div>
+      <div class="intel-bar" id="sectors-narrative"><div class="intel-headline" style="color:var(--t3)">Loading sector context…</div></div>
+      <div class="sectors-grid" id="sectors-grid"><div class="loading">LOADING SECTORS…</div></div>
+    </div>
+
+    <!-- UNIVERSE VIEW -->
+    <div class="view" id="view-universe">
+      <div class="view-hdr">
+        <span class="view-title">Full Universe</span>
+        <span class="view-badge" id="universe-badge">click row → by ticker</span>
+      </div>
+      <div class="intel-bar" id="universe-narrative"><div class="intel-headline" style="color:var(--t3)">Loading universe…</div></div>
+      <div class="uni-wrap" id="uni-wrap"><div class="loading">LOADING UNIVERSE…</div></div>
+    </div>
+
+    <!-- GLOBAL VIEW -->
+    <div class="view" id="view-global">
+      <div class="view-hdr">
+        <span class="view-title">Global Markets — International ETFs + Macro/Rates</span>
+      </div>
+      <div class="intel-bar" id="global-narrative"><div class="intel-headline" style="color:var(--t3)">Loading global context…</div></div>
+      <div class="global-wrap" id="global-wrap"><div class="loading">LOADING GLOBAL…</div></div>
+    </div>
+
+    <!-- MACRO VIEW -->
+    <div class="view" id="view-macro">
+      <div class="view-hdr">
+        <span class="view-title">Macro Context</span>
+        <span class="view-badge" id="macro-view-badge">—</span>
+      </div>
+      <div class="panel-desc">AlphaHound monitors 10 macro instruments to assess global risk appetite. RISK_ON = full size, NEUTRAL = 75%, RISK_OFF = no new entries.</div>
+      <div class="macro-stats" id="macro-stats">
+        <div class="mac-stat"><div class="mac-stat-label">Verdict</div><div class="mac-stat-val" id="mv-verdict">—</div></div>
+        <div class="mac-stat"><div class="mac-stat-label">Score</div><div class="mac-stat-val" id="mv-score">—</div></div>
+        <div class="mac-stat"><div class="mac-stat-label">Size Modifier</div><div class="mac-stat-val" id="mv-size">—</div></div>
+        <div class="mac-stat"><div class="mac-stat-label">Instruments</div><div class="mac-stat-val" id="mv-inst">—</div></div>
+      </div>
+      <div class="mac-reason" id="mv-reason">—</div>
+      <div class="mac-table-wrap" id="mv-table"><div class="loading">LOADING…</div></div>
+    </div>
+
+    <!-- CONGRESS VIEW -->
+    <div class="view" id="view-congress">
+      <div class="view-hdr">
+        <span class="view-title">Congressional Trades — STOCK Act Disclosures</span>
+        <span class="view-badge" id="cong-count">—</span>
+      </div>
+      <div class="alert-list" id="cong-list"><div class="loading">LOADING…</div></div>
+    </div>
+
+    <!-- OPTIONS FLOW VIEW -->
+    <div class="view" id="view-options">
+      <div class="view-hdr">
+        <span class="view-title">Options Flow · Unusual Whales</span>
+        <span class="view-badge" id="flow-count">—</span>
+      </div>
+      <div class="alert-list" id="flow-list"><div class="loading">LOADING…</div></div>
+    </div>
+
+    <!-- HEALTH VIEW -->
+    <div class="view" id="view-health">
+      <div class="view-hdr">
+        <span class="view-title">System Health</span>
+        <span class="view-badge" id="adp-count">—</span>
+      </div>
+      <div class="body" style="display:grid;grid-template-columns:1fr 1fr;gap:0;overflow:hidden;height:100%;">
+        <div style="border-right:1px solid var(--b1);display:flex;flex-direction:column;overflow-y:auto;">
+          <div class="panel-hdr"><span class="ph-title">System Health Monitor</span></div>
+          <div id="health-list"><div class="loading">LOADING…</div></div>
+          <div class="panel-hdr" style="margin-top:8px"><span class="ph-title">Data Adapters</span></div>
+          <div id="adp-list"><div class="loading">LOADING…</div></div>
+        </div>
+        <div style="display:flex;flex-direction:column;overflow-y:auto;">
+          <div class="panel-hdr"><span class="ph-title">Hit Rate — Edge Validation</span><span class="ph-badge" id="hr-count">—</span></div>
+          <div class="hr-grid" id="hr-grid"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- EARNINGS VIEW -->
+    <div class="view" id="view-earnings">
+      <div class="view-hdr">
+        <span class="view-title">Catalyst Calendar — Earnings &amp; PDUFA</span>
+        <span class="view-badge" id="earn-count">—</span>
+      </div>
+      <div class="alert-list" id="earn-list"><div class="loading">LOADING…</div></div>
+    </div>
+
+    <!-- LEGACY ALERTS VIEW -->
+    <div class="view" id="view-alerts">
+      <div class="view-hdr">
+        <span class="view-title">Legacy Divergence Alerts</span>
+        <span class="view-badge">historical reference only</span>
+      </div>
+      <div class="filter-bar">
+        <input class="f-search" id="f-ticker" placeholder="Ticker…" maxlength="6" oninput="applyFilters()">
+        <div class="f-sep"></div>
+        <button class="f-btn" id="f-long" onclick="toggleDir('LONG')">LONG</button>
+        <button class="f-btn" id="f-short" onclick="toggleDir('SHORT')">SHORT</button>
+        <button class="f-btn" id="f-watch" onclick="toggleDir('WATCH')">WATCH</button>
+        <div class="f-sep"></div>
+        <select class="f-select" id="f-type" onchange="applyFilters()">
+          <option value="">All types</option>
+          <option value="news_vs_institutional">News vs Inst</option>
+          <option value="congress">Congress</option>
+          <option value="options_led">Options-led</option>
+        </select>
+        <span class="f-count" id="f-count">— alerts</span>
+        <button class="f-btn" id="f-show-all" onclick="toggleShowAll()" style="margin-left:auto;opacity:0.6;font-size:9px;">&#9662; Show all</button>
+      </div>
+      <div class="alert-list" id="alert-list"><div class="loading">LOADING…</div></div>
+    </div>
+
+    <!-- MAP VIEW -->
+    <div class="view" id="view-map">
+      <div class="view-hdr">
+        <span class="view-title">Market Heatmap — 5-day performance</span>
+        <span class="view-badge">color intensity = |Δ5d|</span>
+      </div>
+      <div class="intel-bar" id="hm-narrative"><div class="intel-headline" style="color:var(--t3)">Loading market context…</div></div>
+      <div class="hm-wrap" id="hm-wrap"><div class="loading">LOADING HEATMAP…</div></div>
+    </div>
+
+  </main>
+
+</div><!-- end body -->
+</div><!-- end shell -->
+
+<script src="/static/js/config.js?v=14"></script>
+<script src="/static/js/utils.js?v=14"></script>
+<script src="/static/js/nav.js?v=14"></script>
+<script src="/static/js/narratives.js?v=14"></script>
+<script src="/static/js/alerts.js?v=14"></script>
+<script src="/static/js/positions.js?v=15"></script>
+<script src="/static/js/tradelog.js?v=14"></script>
+<script src="/static/js/congress.js?v=15"></script>
+<script src="/static/js/flow.js?v=15"></script>
+<script src="/static/js/macro.js?v=14"></script>
+<script src="/static/js/health.js?v=15"></script>
+<script src="/static/js/earnings.js?v=15"></script>
+<script src="/static/js/summary.js?v=14"></script>
+<script src="/static/js/views.js?v=15"></script>
+<script src="/static/js/morning_brief.js?v=14"></script>
+<script src="/static/js/checkin.js?v=15"></script>
+<script src="/static/js/convergence.js?v=15"></script>
+<script src="/static/js/main.js?v=14"></script>
+</body>
+</html>

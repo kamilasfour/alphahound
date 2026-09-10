@@ -1,0 +1,59 @@
+{
+  "as_of": "2026-06-28T18:12:30.784232+00:00",
+  "as_of_pt": "2026-06-28 11:12 AM PT",
+  "steps": {
+    "compute-all": {
+      "status": "ok",
+      "age_mins": 4.9,
+      "duration_s": 3.0,
+      "rows": 1238,
+      "error": null
+    },
+    "convergence-scan": {
+      "status": "running",
+      "age_mins": 3.3,
+      "duration_s": null,
+      "rows": 0,
+      "error": null
+    },
+    "health-check": {
+      "status": "running",
+      "age_mins": 38.3,
+      "duration_s": null,
+      "rows": 0,
+      "error": null
+    },
+    "options-execute": {
+      "status": "ok",
+      "age_mins": 38.7,
+      "duration_s": 2.0,
+      "rows": 0,
+      "error": null
+    },
+    "options-monitor": {
+      "status": "ok",
+      "age_mins": 12.8,
+      "duration_s": 1.0,
+      "rows": 0,
+      "error": null
+    },
+    "score-institutional": {
+      "status": "ok",
+      "age_mins": 4.5,
+      "duration_s": 49.0,
+      "rows": 0,
+      "error": null
+    }
+  },
+  "last_cycle_age_mins": 320.3,
+  "div_zero_streak": 0,
+  "active_signals": 0,
+  "max_d": 0,
+  "problems": [
+    {
+      "severity": "RED",
+      "msg": "Last pipeline cycle 320m ago (expected <20m)"
+    }
+  ],
+  "overall": "RED"
+}

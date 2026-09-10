@@ -1,0 +1,27 @@
+{
+  "as_of": "2026-06-28T18:12:30.784232+00:00",
+  "as_of_pt": "2026-06-28 11:12 AM PT",
+  "backlog": {},
+  "total_backlog": 0,
+  "score_runs": [],
+  "coverage_24h": {
+    "analyst_curated": {
+      "total": 37,
+      "scored": 37,
+      "pct": 100
+    },
+    "news_wire": {
+      "total": 842,
+      "scored": 842,
+      "pct": 100
+    },
+    "retail_social": {
+      "total": 48500,
+      "scored": 48500,
+      "pct": 100
+    }
+  },
+  "watermarks": {},
+  "problems": [],
+  "overall": "GREEN"
+}

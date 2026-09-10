@@ -1,0 +1,52 @@
+{
+  "status": "RED",
+  "as_of_utc": "2026-06-22T14:06:09.959714+00:00",
+  "as_of_pt": "Mon Jun 22 07:06 AM PT",
+  "market_open": false,
+  "engine_status": "live",
+  "macro_verdict": "UNKNOWN",
+  "macro_score": 0,
+  "size_modifier": 0,
+  "last_cycle_mins": 14.4,
+  "super_signal_count": 0,
+  "watching_count": 17,
+  "super_signals": [],
+  "options_positions": [
+    {
+      "ticker": "PLTR",
+      "structure_type": "BULL_CALL_SPREAD",
+      "estimated_debit": 724.0,
+      "contracts": 2
+    },
+    {
+      "ticker": "CVNA",
+      "structure_type": "BULL_CALL_SPREAD",
+      "estimated_debit": 370.0,
+      "contracts": 2
+    },
+    {
+      "ticker": "UNH",
+      "structure_type": "BULL_CALL_SPREAD",
+      "estimated_debit": 856.0,
+      "contracts": 2
+    }
+  ],
+  "positions_open": 3,
+  "pnl_unrealized": 0,
+  "executed_today": 0,
+  "why_not_trading": [
+    "No super signals \u2014 convergence threshold not met"
+  ],
+  "findings": [
+    "PIPELINE ERROR: convergence-scan, massive-history",
+    "ADAPTER BUG: stocks.quiver fetched 1000 but wrote 0",
+    "MACRO UNKNOWN (score=+0.000, size=0%)",
+    "NO SUPER SIGNALS \u2014 17 developing signals building",
+    "OPTIONS POSITIONS: 3 open \u2014 PLTR, CVNA, UNH"
+  ],
+  "actions": [
+    "Investigate: convergence-scan, massive-history",
+    "Fix stocks.quiver write bug"
+  ],
+  "posts_24h": 73831
+}

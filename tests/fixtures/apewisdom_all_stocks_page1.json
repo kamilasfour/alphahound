@@ -1,0 +1,42 @@
+{
+  "count": 4,
+  "pages": 1,
+  "results": [
+    {
+      "ticker": "NVDA",
+      "name": "NVIDIA",
+      "mentions": 120,
+      "upvotes": 840,
+      "rank": "1",
+      "rank_24h_ago": "2",
+      "mentions_24h_ago": 85
+    },
+    {
+      "ticker": "TSLA",
+      "name": "Tesla",
+      "mentions": 90,
+      "upvotes": 612,
+      "rank": "2",
+      "rank_24h_ago": "1",
+      "mentions_24h_ago": 110
+    },
+    {
+      "ticker": "SPY",
+      "name": "SPDR S&P 500 ETF Trust",
+      "mentions": 77,
+      "upvotes": 410,
+      "rank": "3",
+      "rank_24h_ago": "4",
+      "mentions_24h_ago": 60
+    },
+    {
+      "ticker": "AMD",
+      "name": "Advanced Micro Devices",
+      "mentions": 45,
+      "upvotes": 301,
+      "rank": "4",
+      "rank_24h_ago": "3",
+      "mentions_24h_ago": 72
+    }
+  ]
+}
