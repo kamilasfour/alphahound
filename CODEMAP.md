@@ -281,6 +281,35 @@ Path: `scripts/` · Mix of Python diagnostics and PowerShell schedulers / Window
 | `score_new.ps1` | PowerShell | Scheduled FinBERT scoring run wrapper |
 | `register_scheduled_task.ps1` | PowerShell | Register Windows Task Scheduler tasks for ingest + score pipeline |
 | `register_score_task.ps1` | PowerShell | Register scoring-specific Windows Task Scheduler task |
+| `register_assessment_task.ps1` | PowerShell | Register assessment-service Windows Task Scheduler task |
+| `assessment_service.py` | Python | Generates `docs/status/assessment.json` + DB row every 15 min — feeds `/api/assessment` |
+| `status_monitor.py` | Python | Purpose undocumented — no comments or register script explain it |
+
+---
+
+## Scheduled Tasks (Windows Task Scheduler)
+
+Live on repsportalvm. Three have a matching `register_*.ps1` in this repo; two do not (set up outside source control — treat as undocumented until someone finds/writes their setup).
+
+| Task Name | Trigger | Runs | Description | Registered via |
+|---|---|---|---|---|
+| `AlphaHound-Ingest` | Every 15 min, aligned to :00/:15/:30/:45 | `ingest_all.ps1` | Main pipeline: `ingest_parallel.py` (6 adapters, parallel) → `compute-all` → `score-institutional` → `convergence-scan` → *(market hours 6:30am–1pm PT only)* `options-monitor --close` → `options-execute` → `health-check`. 6am-only extras: `massive-history` + `seed-catalysts`. Logs: `logs/ingest_YYYY-MM-DD.log`. | `register_scheduled_task.ps1` |
+| `AlphaHound-Score` | Every 30 min, offset +7 min from :00/:30 (avoids overlapping Ingest) | `score_new.ps1` | FinBERT sentiment scoring (`score-new --max-posts 500`), split out from the main pipeline so CPU spikes don't block ingestion. Logs: `logs/score_YYYY-MM-DD.log`. | `register_score_task.ps1` |
+| `AlphaHound-Assessment` | Every 15 min | `assessment_service.py` (direct — no `.ps1` wrapper) | Generates `docs/status/assessment.json` + DB row; feeds `/api/assessment`. | `register_assessment_task.ps1` |
+| `AlphaHound-Earnings` | Daily, 6:00 AM | `ingest_earnings.ps1` | Pulls upcoming earnings dates (Finnhub) for the watchlist, next 30 days. | ⚠️ Not in `scripts/` — registered outside this repo |
+| `AlphaHound-StatusMonitor` | Unknown | `status_monitor.py` | Purpose not documented. | ⚠️ Not in `scripts/` — registered outside this repo |
+
+**⚠️ Status as of Sept 9, 2026** (`Get-ScheduledTaskInfo`): every task's `LastRunTime` is frozen at **6/28/2026** — ~2.5 months ago — despite `NextRunTime` showing upcoming times. Result codes from that last run:
+
+| Task | Last Result | Meaning |
+|---|---|---|
+| `AlphaHound-Ingest` | `267014` (hex `0x41306`) | `SCHED_S_TASK_TERMINATED` — killed, most likely by the 10-min `ExecutionTimeLimit` in `register_scheduled_task.ps1` |
+| `AlphaHound-Assessment` | `1` | Generic failure |
+| `AlphaHound-StatusMonitor` | `1` | Generic failure |
+| `AlphaHound-Score` | `0` | Success — but also hasn't run again since |
+| `AlphaHound-Earnings` | `0` | Success — same freeze |
+
+**Leading theory:** `AlphaHound-Ingest` was hard-killed mid-run on 6/28. Its `MultipleInstances` setting is `IgnoreNew` — if Task Scheduler's internal state still believes an instance is "running," it would silently skip every subsequent trigger, explaining why *all* tasks stopped updating at the same moment. Unconfirmed pending `Get-ScheduledTask -TaskName "AlphaHound-Ingest" | Select State` on the server. If `State` shows `Running`, unregister + re-register the task.
 
 ---
 
