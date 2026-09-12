@@ -1,219 +1,179 @@
 # Azure Resource Baseline
 
 **Step:** STEP 2 — Confirm Azure Resource Baseline (per `IMPLEMENTATION_PLAYBOOK.md`)
-**Status:** Partial — see "Tooling limitation" below. No Azure resources created, modified, deleted, or migrated.
-**Date:** 2026-09-10
-
----
-
-## Tooling limitation (read this first)
-
-Claude has no Azure CLI or Azure API access in this environment — there is no available tool to query the live Azure subscription directly. Everything in this document is one of two things:
-
-- **Confirmed from repo/config** — verifiable directly from source, cited below.
-- **Unknown — needs Kamil to confirm** — requires running the Azure CLI commands listed in each section and pasting the output back, the same pattern used for `Get-ScheduledTaskInfo` in Step 1.
-
-No "EXISTS / CREATE / REUSE / REPLACE / NOT NEEDED YET" decision is recorded for anything I couldn't verify — guessing here risks either provisioning a duplicate of something that already exists, or wrongly assuming something exists when it doesn't.
+**Status:** Complete.
+**Confirmed by:** Kamil, 2026-09-10.
+**Updated:** 2026-09-11 — resources listed as CREATE below were provisioned under Step 4A. See `AH2_DEV_ENVIRONMENT.md` §9 for full detail (actual names, resource IDs, deviations, and follow-ups).
 
 ---
 
 ## 1. Azure subscription & region
 
-**Status: Unknown — needs confirmation**
-
-Nothing in the repo records a subscription ID, tenant, or default region.
-
-Run and paste back:
-```powershell
-az account show --output table
-az account list --output table
-```
-
-**Decision output:** *Pending.*
+| Field | Value |
+|---|---|
+| Region | **West Central US** (dev resources; Application Insights landed in West US 2 — see note below) |
+| Subscription ID | `374149b5-c9ee-451c-8a4b-5f76e800b6ae` ("Azure subscription 1") |
+| Tenant ID | `330c25eb-026b-49c0-a220-c79b629aa93a` |
 
 ---
 
 ## 2. Resource groups
 
-**Status: Partially inferable, not confirmed**
+| Resource Group | Region | Current Contents |
+|---|---|---|
+| `alphahound-rg` | West Central US | PostgreSQL Flexible Server only (confirmed by Kamil) — untouched by Step 4A |
+| `ah2-dev-rg` | West Central US | AH2 dev infrastructure, provisioned Step 4A: Function storage account, Service Bus namespace + queue, Key Vault, Log Analytics workspace, Application Insights, App Service plan, Function App |
 
-The Postgres hostname in `.env` (see §3) is `alphahound-rg.postgres.database.azure.com`. `alphahound-rg` is the **PostgreSQL Flexible Server name** — it is *not* necessarily the resource group name, even though the naming convention suggests it might be. This should not be assumed.
-
-Run and paste back:
-```powershell
-az group list --output table
-```
-
-**Decision output:** *Pending.*
+`ah2-dev-rg` was created in Step 4A per `AH2_DEV_ENVIRONMENT.md` §2. No other AlphaHound-related resource groups exist in the subscription.
 
 ---
 
 ## 3. PostgreSQL
 
-**Status: Confirmed to exist, details partially confirmed from `.env`**
-
-From `DATABASE_URL` in `.env` (password redacted — not reproduced per this step's "no secrets in the document" rule):
+**Decision: EXISTS — REUSE**
 
 | Field | Value |
 |---|---|
 | Server type | Azure Database for PostgreSQL — Flexible Server |
-| Server FQDN | `alphahound-rg.postgres.database.azure.com` |
-| Database name | `alphahound` |
-| Admin user | `alphahound_admin` |
-| Port | `5432` |
-| SSL | Required (`sslmode=require`) |
+| Server name | `alphahound-rg` |
+| Resource group | `alphahound-rg` |
+| Region | West Central US |
+| PostgreSQL version | 17.11 |
+| Tier | Burstable B2s |
+| Compute | 2 vCores |
+| Memory | 4 GB RAM |
+| Storage | 32 GiB |
+| Database name | `alphahound` (from `.env` `DATABASE_URL`) |
+| Admin user | `alphahound_admin` (from `.env` — password not reproduced here) |
+| Port / SSL | 5432, `sslmode=require` |
 
-Not confirmed from the connection string: region, compute tier/SKU, storage size, backup retention, firewall/VNet rules, high-availability configuration, or which resource group it lives in.
+This is the same server AH1 currently runs on. Per ADR-002, AH2 reuses this server — no new database technology is introduced. **Not modified in Step 4A** — Kamil's authorization explicitly excluded touching this server. The proposed `alphahound2` database (STEP 6 prep) remains a future step, not done.
 
-Run and paste back:
-```powershell
-az postgres flexible-server list --output table
-az postgres flexible-server show --name alphahound-rg --resource-group <rg-name-from-§2>
-az postgres flexible-server firewall-rule list --name alphahound-rg --resource-group <rg-name-from-§2>
-```
-
-**Decision output:** **EXISTS** (server + database confirmed reachable — this is what AH1 runs on today). Region/SKU/networking: *pending.*
+**Open item (non-blocking):** exact networking configuration (public access + firewall rules vs. VNet-integrated/private endpoint) wasn't specified. See `AH2_DEV_ENVIRONMENT.md` §7 for the dev-vs-production connectivity recommendation.
 
 ---
 
 ## 4. Azure Storage
 
-**Status: Unknown — no evidence in repo**
+**Decision: CREATED (Step 4A)**
 
-`IMPLEMENTATION_PLAYBOOK.md` §2 lists Azure Storage as part of the "current starting position," but no connection string, account name, or SDK dependency (`azure-storage-blob`, etc.) appears anywhere in `.env` or `pyproject.toml`. Either it exists but isn't wired into AH1 yet, or it doesn't exist yet.
+| Field | Value |
+|---|---|
+| Account name | `ah2devfuncst01` |
+| Resource group | `ah2-dev-rg` |
+| Region | West Central US |
+| SKU | Standard_LRS, StorageV2, Hot tier |
+| Purpose | Required backing storage for `ah2-dev-func` (every Function App needs one) |
 
-Run and paste back:
-```powershell
-az storage account list --output table
-```
-
-**Decision output:** *Pending.*
+Existing Storage accounts in the subscription belonging to unrelated projects were not reused, consistent with the original decision.
 
 ---
 
 ## 5. Networking configuration
 
-**Status: Unknown**
-
-No VNet, subnet, private endpoint, or firewall configuration is referenced anywhere in the repo.
-
-Run and paste back:
-```powershell
-az network vnet list --output table
-```
-
-**Decision output:** *Pending.*
+Not separately provisioned. `ah2-dev-rg` resources use public endpoints with SSL/TLS (no VNet, subnet, or private endpoint), consistent with the dev-scale recommendation in `AH2_DEV_ENVIRONMENT.md` §7. Revisit before production or before any workflow touches real capital.
 
 ---
 
 ## 6. App Service / VM resources
 
-**Status: Unknown, but likely irrelevant**
+**Decision: CREATED (Step 4A)** — App Service plan `ah2-dev-plan` (Consumption/Y1, Linux) in `ah2-dev-rg`, backing `ah2-dev-func`.
 
-AH1 currently runs on Windows Server 2022 (`repsportalvm`) outside Azure App Service — this looks like a self-managed VM or on-prem/other-cloud box, not an Azure compute resource. Worth confirming it isn't already an Azure VM before assuming it's out of scope.
-
-Run and paste back:
-```powershell
-az vm list --output table
-az webapp list --output table
-```
-
-**Decision output:** *Pending — likely NOT NEEDED YET for AH2 (Functions replace this role per ADR-001), but confirm `repsportalvm` isn't itself an Azure VM first.*
+`alphahound-rg` still contains no App Service or VM resources — consistent with AH1's Windows Server (`repsportalvm`) staying out of scope for AH2 infrastructure.
 
 ---
 
 ## 7. Key Vault
 
-**Status: Unknown — no evidence in repo**
+**Decision: CREATED (Step 4A)**
 
-All current secrets (Postgres password, Finnhub/Massive/Quiver/Unusual Whales/Anthropic/Alpaca keys) live in plaintext `.env` on the Windows server, not in Key Vault. This is expected for AH1 (predates the AH2 rules) but is exactly what ADR-004/`CLAUDE.md` rule 10 requires AH2 to move away from.
+| Field | Value |
+|---|---|
+| Name | `ah2-dev-kv` |
+| Resource group | `ah2-dev-rg` |
+| SKU | Standard |
+| Authorization model | Azure RBAC (`enableRbacAuthorization: true`) — no legacy access policies |
 
-Run and paste back:
-```powershell
-az keyvault list --output table
-```
-
-**Decision output:** *Pending — if none exists, disposition is **CREATE** (required by `CLAUDE.md` rule 10 and STEP 3/4 of the playbook).*
+Empty at creation — no secrets have been written to it yet. Required by `CLAUDE.md` rule 10 and ADR-004 before any AH2 secret (Postgres credentials, provider API keys) moves out of plaintext `.env`.
 
 ---
 
 ## 8. Application Insights
 
-**Status: Unknown — no evidence in repo**
+**Decision: CREATED (Step 4A)**
 
-No Application Insights connection string or instrumentation key appears in `.env` or code.
-
-Run and paste back:
-```powershell
-az monitor app-insights component show --output table
-```
-
-**Decision output:** *Pending — if none exists, disposition is **CREATE** (required for STEP 4 observability requirements).*
+| Field | Value |
+|---|---|
+| Name | `ah2-dev-appi` |
+| Resource group | `ah2-dev-rg` |
+| Region | **West US 2** (not West Central US — see deviation note in `AH2_DEV_ENVIRONMENT.md` §9; `westcentralus` is not a supported region for this resource type) |
+| Mode | Workspace-based, linked to Log Analytics workspace `ah2-dev-law` (West Central US, PerGB2018, 30-day retention) |
 
 ---
 
 ## 9. Function Apps
 
-**Status: Confirmed NOT present in code**
+**Decision: CREATED (Step 4A)**
 
-`pyproject.toml` has no `azure-functions` dependency, and no `host.json`, `function.json`, or `local.settings.json` exists anywhere in the repository. No Azure Functions project has been scaffolded yet — this matches `IMPLEMENTATION_PLAYBOOK.md` STEP 4 being un-started.
+| Field | Value |
+|---|---|
+| Name | `ah2-dev-func` |
+| Resource group | `ah2-dev-rg` |
+| Region | West Central US |
+| Plan | `ah2-dev-plan` — Consumption (Y1), Linux |
+| Runtime | Python 3.11 |
+| Identity | System-assigned managed identity (principal ID `d355ff8b-278b-42d7-831f-86f5d706eacf`) |
+| Status | Running, no code deployed |
 
-Run and paste back (to check whether one exists in Azure despite no local scaffold):
-```powershell
-az functionapp list --output table
-```
-
-**Decision output:** **NOT NEEDED YET locally** (correctly — Functions scaffolding is STEP 4, not STEP 2). Azure-side existence: *pending.*
+Storage connection (`AzureWebJobsStorage`) is configured identity-based rather than via a connection-string key. **RBAC remediated 2026-09-11**: the system-assigned identity now holds Storage Blob Data Owner, Storage Queue Data Contributor, and Storage Table Data Contributor, scoped only to `ah2devfuncst01`. See `AH2_DEV_ENVIRONMENT.md` §9 "STEP 4A remediation" for role assignment IDs and the one remaining open item (independent app-settings read-back, non-blocking).
 
 ---
 
 ## 10. Service Bus
 
-**Status: Unknown — no evidence in repo**
+**Decision: CREATED (Step 4A)**
 
-No `azure-servicebus` dependency, no connection string, no queue/topic names referenced anywhere in the codebase.
-
-Run and paste back:
-```powershell
-az servicebus namespace list --output table
-```
-
-**Decision output:** *Pending — if none exists, disposition is likely **CREATE** (required by ADR-001 for AH2's async event architecture, STEP 5).*
+| Field | Value |
+|---|---|
+| Namespace | `ah2-dev-svcbus` (renamed from the originally proposed `ah2-dev-sb` — that suffix is reserved by Azure; see deviation note) |
+| Resource group | `ah2-dev-rg` |
+| Region | West Central US |
+| SKU | Basic |
+| Initial queue | `ah2-dev-test-queue` (14-day TTL, dead-lettering on expiration, max delivery count 10) |
 
 ---
 
 ## 11. Container Apps environment
 
-**Status: Unknown — no evidence in repo**
+**Decision: NOT NEEDED YET**
 
-`ARCHITECTURE.md` §10 mentions Azure Container Apps GPU as a future compute option for heavier model inference, but nothing indicates one exists yet.
-
-Run and paste back:
-```powershell
-az containerapp env list --output table
-```
-
-**Decision output:** *Pending — almost certainly **NOT NEEDED YET** given the roadmap sequencing (GPU compute isn't needed until Phase 3, well after Functions foundation).*
+Consistent with roadmap sequencing — GPU/container compute isn't needed until Phase 3 (Model Gateway), well after the Functions foundation (Phase 1) is built. Explicitly excluded from Step 4A.
 
 ---
 
-## 12. Fastest path to completing this document
+## Summary table
 
-Running these two commands and pasting the output back closes most of the gaps above in one pass:
-
-```powershell
-az account show --output table
-az resource list --output table
-```
-
-`az resource list` returns every resource in the subscription (name, resource group, type, location) in a single call — covers §1, §2, §4, §5, §6, §7, §8, §9, §10, and §11 at once. §3's deeper Postgres detail (SKU, firewall rules, HA config) needs the additional `az postgres flexible-server show` / `firewall-rule list` commands listed in that section.
+| Resource | Status | Decision |
+|---|---|---|
+| Resource group `alphahound-rg` | Exists | REUSE — untouched |
+| Resource group `ah2-dev-rg` | Exists | CREATED (Step 4A) |
+| PostgreSQL Flexible Server `alphahound-rg` | Exists | REUSE — untouched in Step 4A |
+| Azure Storage `ah2devfuncst01` | Exists | CREATED (Step 4A) |
+| Networking (VNet/private endpoint) | Not provisioned | Open — public access + SSL for dev, revisit for production |
+| App Service plan `ah2-dev-plan` | Exists | CREATED (Step 4A) |
+| Key Vault `ah2-dev-kv` | Exists | CREATED (Step 4A) — empty |
+| Log Analytics workspace `ah2-dev-law` | Exists | CREATED (Step 4A) |
+| Application Insights `ah2-dev-appi` | Exists | CREATED (Step 4A) — West US 2, not West Central US |
+| Function App `ah2-dev-func` | Exists | CREATED (Step 4A) — running, no code, RBAC remediated 2026-09-11 |
+| Service Bus namespace `ah2-dev-svcbus` + queue `ah2-dev-test-queue` | Exists | CREATED (Step 4A) — renamed from proposed `ah2-dev-sb` |
+| Container Apps environment | Does not exist | NOT NEEDED YET |
 
 ---
 
-## What was explicitly NOT done in this step
+## What was explicitly NOT done in Step 2 (2026-09-10, original baseline)
 
 - No Azure resources were created, modified, deleted, or migrated.
-- No secrets (the Postgres password or any API key) were written into this document.
-- No decision above was guessed where evidence was unavailable — items are marked "Pending" rather than assumed.
+- No secrets were written into this document.
+- No infrastructure-as-code was written.
 
-**This step is incomplete pending the Azure CLI output above. Once provided, this document will be updated and then stopped for review before STEP 3 is authorized — per the playbook, STEP 3 does not begin until this baseline is reviewed.**
+(Step 4A, executed 2026-09-11, is a separate, explicitly authorized step — see `AH2_DEV_ENVIRONMENT.md` §9 for its full record, including deviations and open follow-ups.)

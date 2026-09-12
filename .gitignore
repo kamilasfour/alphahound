@@ -19,3 +19,6 @@ grafana-installer.msi
 cloudflared.exe
 ngrok.exe
 ngrok.zip
+
+# Azure Functions local development settings (never committed)
+local.settings.json
