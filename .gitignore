@@ -22,3 +22,8 @@ ngrok.zip
 
 # Azure Functions local development settings (never committed)
 local.settings.json
+
+# AH2 deployment build artifacts (built by build_zip.ps1 / pip --target,
+# not source — see docs/AH2/docs/AH2_DEV_ENVIRONMENT.md STEP 4B)
+docs/AH2/*.zip
+docs/AH2/src/.python_packages/
