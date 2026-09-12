@@ -38,6 +38,9 @@ EXPECTED_TABLES = [
     "audit_events",
     "replay_requests",
     "replay_history",
+    "signals",
+    "probability_signals",
+    "opportunity_signals",
 ]
 
 
@@ -98,3 +101,36 @@ def test_foreign_keys_reference_only_tables_created_in_this_migration():
     assert "REFERENCES orders" in sql
     assert "REFERENCES audit_events" in sql
     assert "REFERENCES replay_requests" in sql
+
+
+def test_ah2_0002_is_additive_and_chains_after_ah2_0001():
+    # STEP 6A must not rewrite or replace ah2_0001 — it should be a
+    # separate, additive revision chained after it. Uses Alembic's own
+    # ScriptDirectory to resolve this correctly regardless of cwd/sys.path.
+    from alembic.script import ScriptDirectory
+
+    script_dir = ScriptDirectory.from_config(_alembic_config())
+    rev_0002 = script_dir.get_revision("ah2_0002")
+    assert rev_0002.down_revision == "ah2_0001"
+    head = script_dir.get_current_head()
+    assert head == "ah2_0002"
+
+
+def test_signals_table_has_a_real_fk_backed_junction_to_probabilities_and_opportunities():
+    sql = _generate_sql(command.upgrade, "base:head")
+    assert "CREATE TABLE probability_signals" in sql
+    assert "REFERENCES probabilities" in sql
+    assert "REFERENCES signals" in sql
+    assert "CREATE TABLE opportunity_signals" in sql
+    assert "REFERENCES opportunities (opportunity_id)" in sql
+
+
+def test_downgrade_removes_junction_tables_before_signals():
+    sql = _generate_sql(command.downgrade, "head:base")
+    # Order matters: dropping signals before its referencing junction
+    # tables would fail against a real FK-enforced database.
+    opp_sig_pos = sql.index("DROP TABLE IF EXISTS opportunity_signals;")
+    prob_sig_pos = sql.index("DROP TABLE IF EXISTS probability_signals;")
+    signals_pos = sql.index("DROP TABLE IF EXISTS signals;")
+    assert opp_sig_pos < signals_pos
+    assert prob_sig_pos < signals_pos

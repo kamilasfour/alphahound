@@ -1,8 +1,8 @@
 # AH2 Data Architecture
 
-**Step:** STEP 6 — AH2 PostgreSQL Schema Foundation (schema/design, not migration-heavy)
+**Step:** STEP 6 (AH2 PostgreSQL Schema Foundation) + STEP 6A (signals table follow-up)
 **Status:** COMPLETE — schema designed, migrated, and verified on `alphahound2`
-**Date:** 2026-09-12
+**Date:** 2026-09-12 (STEP 6) / 2026-09-12 (STEP 6A, same day)
 
 This document describes the initial AH2 PostgreSQL schema: what each table is for, how provenance and idempotency are preserved, indexing/access-pattern expectations, and the Program Manager decisions this schema implements. See `docs/AH2/docs/MIGRATIONS.md` for how to actually run/roll back the migration, and `docs/AH2/docs/EVENT_CONTRACT.md` for the event vocabulary this schema exists to durably record.
 
@@ -48,27 +48,38 @@ This document describes the initial AH2 PostgreSQL schema: what each table is fo
 - `replay_requests.involves_financial_side_effect_types` exists so that any future replay-execution tooling has a structural flag to check before acting — **this schema does not implement that enforcement logic itself** (there is no replay-execution code yet — that's future, separately-authorized work). The `replay_history.outcome` value `skipped_side_effect_guard` is reserved for exactly that future check to record "this replay was correctly blocked from reproducing a financial side effect."
 - Concretely: replaying one of these four event types may **reconstruct or evaluate state** (e.g., re-running a risk calculation against `market_states`/`probabilities` as they exist today, to see what a decision *would* be) but must never automatically re-insert a new `risk_decisions`/`orders` row that triggers a real downstream action. Enforcing that distinction in code is Step 7+ work; this schema only provides the structural hooks (the flag, the `audit_events` immutability, the FK linking a replay back to its original event) that such code will need.
 
+### 3.4 STEP 6A decisions (audit payload discipline, retention, current-positions view)
+
+- **`audit_events` retention is indefinite for now.** No automated purge/archival exists or is planned yet — this resolves the retention half of the open question raised in `EVENT_CONTRACT.md` §18 and STEP 6 §7.4. (The *payload-size* half of that question is addressed by the next two points, separately from retention *period*.)
+- **`audit_events.payload` must contain only structured decision-reconstruction data** — the fields actually needed to understand and reconstruct why a decision was made (scores, checks evaluated, references, structured parameters), not arbitrary supporting material.
+- **Large raw documents, articles, or prompts must never be duplicated into `audit_events`.** Persist a reference, an ID, or a content hash instead (the same pattern `raw_source_events.raw_data_ref` already establishes) — `payload` points at where the large content lives, it does not contain it.
+- **~64 KB is a soft target for `audit_events.payload`, not a database-enforced limit.** No `CHECK` constraint or trigger enforces this (Postgres/JSONB has no practical trouble storing more, and a hard limit would risk silently rejecting a legitimate audit write) — it is guidance for whoever writes producer code in a future step, not something this schema blocks.
+- **No `current_positions` view was created.** This was already the case after STEP 6 (see §7) and remains deliberate — explicitly deferred until real position/execution workflows exist, per this decision.
+
 ---
 
 ## 4. Table reference
 
-All 18 tables live in `alphahound2`, `public` schema.
+All 21 tables live in `alphahound2`, `public` schema (18 from STEP 6 + `signals`, `probability_signals`, `opportunity_signals` from STEP 6A).
 
 | Table | Maps to (event contract) | Purpose |
 |---|---|---|
 | `raw_source_events` | `DATA_RECEIVED` | Raw external data ingestion record (a *reference* to the raw content, not the content itself) |
 | `evidence` | `EVIDENCE_PROCESSED` | Normalized, structured evidence derived from raw source events |
-| `features` | — (see §7 open question) | Derived/engineered feature values used by scoring |
+| `features` | — (see §7) | Derived/engineered feature values used by scoring |
 | `models` / `model_versions` | — | Model registry: named models and their versioned, trained instances |
 | `predictions` | — (see §7) | Raw model output for a given input |
+| `signals` | `SIGNAL_DETECTED` | **(STEP 6A)** A candidate trading signal identified from one or more evidence/feature pillars |
 | `probabilities` | `PROBABILITY_UPDATED` | Aggregate convergence probability for a ticker |
+| `probability_signals` | — | **(STEP 6A)** Junction table: which signals contributed to a given probability (FK-enforced, replaces reliance on the bare event-ID array for anything with a real `signals` row) |
 | `market_states` | — | Point-in-time market/macro condition snapshots (e.g. a macro gate state) |
 | `opportunities` | `OPPORTUNITY_DETECTED` | A specific candidate tradeable opportunity |
+| `opportunity_signals` | — | **(STEP 6A)** Junction table: which signals an opportunity traces back to directly (FK-enforced) |
 | `risk_decisions` | `RISK_APPROVED` / `RISK_REJECTED` | Risk gate decisions — **not blindly replayable** |
 | `compliance_decisions` | `COMPLIANCE_APPROVED` / `COMPLIANCE_REJECTED` | Compliance gate decisions — **not blindly replayable** |
 | `orders` | `ORDER_REQUESTED` / `ORDER_SUBMITTED` | Order lifecycle — **not blindly replayable** |
 | `fills` | `ORDER_FILLED` | Broker fill/execution records (supports partial fills) |
-| `positions` | `POSITION_CHANGED` | Append-only position-change history (not a single mutable "current state" table — see §5) |
+| `positions` | `POSITION_CHANGED` | Append-only position-change history (not a single mutable "current state" table — see §7) |
 | `outcomes` | `MARKET_RESOLVED` | Realized outcomes (prediction-market resolution, or other ground truth) |
 | `audit_events` | *all events* | Immutable, append-only, authoritative durable record of every AH2 event |
 | `replay_requests` / `replay_history` | — | Out-of-band replay tracking (PM decision §3.2) |
@@ -87,6 +98,8 @@ All 18 tables live in `alphahound2`, `public` schema.
 | `probabilities` | `(ticker, created_at)` | "Probability history for ticker X" |
 | `market_states` | `(state_type, observed_at)`, partial index on `(ticker, observed_at)` where ticker present | "Current macro gate state"; "state history for ticker X" |
 | `opportunities` | `ticker`, `status`, `correlation_id` | "Open opportunities awaiting risk review" (`status = 'detected'`); full transaction trace via `correlation_id` |
+| `signals` | `ticker`, `signal_type`, `correlation_id`, `created_at`, partial index on `expires_at` where present, GIN on `convergence_metadata`/`catalyst_details` | "Active (non-expired) signals for ticker X"; "all signals of type Y"; ad-hoc queries inside convergence/catalyst metadata |
+| `probability_signals` / `opportunity_signals` | composite PK (covers the forward lookup), plus a reverse index on `signal_id` | "Which signals fed probability P / opportunity O" (forward, via PK); "which probabilities/opportunities did signal S influence" (reverse, via the `signal_id` index) |
 | `risk_decisions` / `compliance_decisions` | `opportunity_id`, `(decision, decided_at)` | "Decision history for opportunity X"; "recent rejections and why" |
 | `orders` | `opportunity_id`, `status` | "Orders awaiting submission"; "order for opportunity X" |
 | `fills` | `(order_id, filled_at)` | "All fills for order X, in sequence" |
@@ -102,19 +115,18 @@ All 18 tables live in `alphahound2`, `public` schema.
 
 Since Claude has no network path to the Postgres server from its sandbox, verification split into two parts:
 
-1. **Structural (offline, automated):** `tests/test_db_migrations.py` uses Alembic's offline SQL-generation mode to confirm the migration creates all 18 tables, the append-only trigger/function, and expected foreign keys — without needing a live connection. Part of the standard AH2 test suite (45/45 passing, see STEP 6 report).
+1. **Structural (offline, automated):** `tests/test_db_migrations.py` uses Alembic's offline SQL-generation mode to confirm the migration creates all tables, the append-only trigger/function, and expected foreign keys — without needing a live connection. Part of the standard AH2 test suite.
 2. **Live (manual, by Kamil):**
-   - `alembic upgrade head` applied cleanly against the real `alphahound2` database.
-   - `verify_schema.py` confirmed all 18 expected tables (+ Alembic's own `alembic_version` tracking table = 19) exist, and the Alembic version stamp reads `ah2_0001`.
-   - `verify_audit_append_only.py` inserted a real throwaway row into `audit_events` and confirmed both `UPDATE` and `DELETE` against it were rejected by Postgres with the expected error, and the row remains present and unchanged — the append-only guarantee is real, not just documented.
+   - STEP 6: `alembic upgrade head` applied cleanly against the real `alphahound2` database; `verify_schema.py` confirmed all 18 expected tables (+ `alembic_version` = 19) and version stamp `ah2_0001`; `verify_audit_append_only.py` confirmed the append-only trigger genuinely rejects `UPDATE`/`DELETE`.
+   - STEP 6A: `alembic upgrade head` applied the additive `ah2_0002` migration; `verify_schema.py` re-run confirmed all 21 tables (+ `alembic_version` = 22) and version stamp `ah2_0002`. See the STEP 6A chat report for the exact table list and test counts at that point in time.
 
 ---
 
 ## 7. Open questions for Program Manager / future-step review
 
-1. **Where does `SIGNAL_DETECTED` persist?** The STEP 6 authorization's table list did not include a dedicated `signals` table, even though `SIGNAL_DETECTED` is part of the STEP 5 event vocabulary. This schema does not invent one. `probabilities.contributing_signal_event_ids` currently stores signal *event IDs* as a bare UUID array (no FK, since there's no table to reference) — this works but means signal detail itself has nowhere to durably live yet. A future step should decide whether `SIGNAL_DETECTED` maps into `features`/`predictions`, or needs its own table.
+1. ~~Where does `SIGNAL_DETECTED` persist?~~ **Resolved by STEP 6A:** `signals` is now a first-class table, with FK-backed junction tables (`probability_signals`, `opportunity_signals`) linking it to `probabilities` and `opportunities`. `probabilities.contributing_signal_event_ids` (the original bare UUID array) is left in place, unchanged, as a legacy/fallback field for any signal that predates having a real `signals` row — new code should prefer the junction tables.
 2. **`features`/`predictions` idempotency is looser than most other tables.** Their `UNIQUE` constraints (`(ticker, feature_name, computed_at)` and none at all on `predictions`, respectively) guard against exact-timestamp duplicates but not against "the same underlying computation re-run with a slightly different timestamp." This is fine for a schema foundation but worth revisiting once real feature-computation code exists.
-3. **`positions` has no materialized "current state" view.** Every position change is a new row (event-sourced, matching `POSITION_CHANGED`'s append-only nature per `EVENT_CONTRACT.md`), but there's no view/table yet answering "what are our current open positions right now" without a `MAX(version)` query per `position_id`. Reasonable to add as a plain SQL view in a later step; not built now to keep this step schema-only.
-4. **Audit retention period and payload-size policy are still undecided**, per the open question already raised in `EVENT_CONTRACT.md` §18 — this schema makes `audit_events` durable and immutable, but does not decide how long to keep it or whether every event type's full payload belongs there forever versus a smaller reference for very large payloads.
+3. **`positions` has no materialized "current state" view** — confirmed deliberate per the STEP 6A PM decision (§3.4): deferred until real position/execution workflows exist.
+4. **Audit retention period is now resolved (indefinite, §3.4), and payload discipline is now resolved (structured data only, references not raw content, ~64 KB soft target, §3.4).** What remains genuinely open: whether a *hard* limit or automated archival will ever be needed as volume grows — not a concern at this schema-foundation stage.
 
-**STEP 6 is complete: schema designed, documented, migrated, and verified against the real `alphahound2` database. No AH1 tables/databases were touched. No external data was ingested. No Step 7 adapters, trading logic, or probability models were built. STEP 7 is not authorized until Kamil explicitly approves it.**
+**STEP 6 and STEP 6A are complete: schema designed, documented, migrated, and verified against the real `alphahound2` database, including the additive `signals` table and its FK-backed links to `probabilities` and `opportunities`. No AH1 tables/databases were touched. No external data was ingested. No Step 7 adapters, trading logic, or probability models were built. STEP 7 is not authorized until Kamil explicitly approves it.**
