@@ -1,8 +1,8 @@
 # AH2 Development Environment
 
-**Step:** STEP 4B — Azure Functions + Service Bus foundation test (executed, verified end-to-end)
-**Status:** COMPLETE. Timer → Service Bus → Queue Consumer workflow deployed to `ah2-dev-func` and verified working, correlation ID propagating end-to-end. STEP 5 not started, pending Kamil's explicit authorization.
-**Date:** 2026-09-10 (design) / 2026-09-11 (STEP 4A provisioned + remediated) / 2026-09-12 (STEP 4B implemented, deployed, verified)
+**Step:** STEP 4A/4B/5/6/6A/7A/7B (see sections below; this doc grows with each step)
+**Status:** COMPLETE through STEP 7B. Yahoo Finance ingestion live and verified end-to-end on `ah2-dev-func` writing to `alphahound2`. STEP 8 not started, pending Kamil's explicit authorization.
+**Date:** 2026-09-10 (design) / 2026-09-11 (STEP 4A) / 2026-09-12 (STEP 4B through 7B)
 
 ---
 
@@ -302,4 +302,80 @@ All verified via Application Insights (`AppTraces` in the `ah2-dev-law` Log Anal
 - **Kamil's temporary Storage Blob Data Contributor grant** (scoped to the `deploy` container) exists purely to support manual deployment via his own login and should be revisited/revoked once a real CI/CD identity takes over deployments.
 - **The diagnostic-detector table-rendering limitation noted in STEP 4A** (empty `Table` fields from `appservice_webapp_diagnostic_diagnose`) persisted in STEP 4B — the Portal UI itself (`Diagnose and solve problems` → `Function App Down or Reporting Errors` → `Functions that are not triggering`) was the one path that surfaced the actual Python traceback and was essential to finding Bug 1.
 
-**STEP 4B is complete: code written, tested (32/32 passing), deployed, and verified end-to-end on Azure with correlation ID propagation confirmed in logs. Stopping here per instruction — STEP 5 is not authorized until Kamil explicitly approves it.**
+**STEP 4B is complete: code written, tested (32/32 passing), deployed, and verified end-to-end on Azure with correlation ID propagation confirmed in logs.**
+
+---
+
+## 11. STEP 7B — Yahoo Finance ingestion into AH2 (executed 2026-09-12)
+
+Kamil authorized STEP 7B (STEP 7A having selected `yahoo_finance` as the first AH1 source to migrate — see `FIRST_ADAPTER_SELECTION.md`): build the full flow `Azure Timer → Yahoo Finance → normalize → raw_source_events → evidence → audit_events → DATA_RECEIVED → Service Bus → consumer verifies receipt`, reusing AH1's proven RSS-parsing logic, using `alphahound2` (STEP 6/6A schema), and deploying to the existing `ah2-dev-func` Function App on a 15-minute timer.
+
+### Files created
+
+| Path | Purpose |
+|---|---|
+| `src/infrastructure/sources/yahoo_finance_client.py` | Ported from AH1's `yahoo_finance.py` — RSS fetch, XML parse, normalization into `NormalizedYahooArticle`; retries per-ticker with backoff |
+| `src/infrastructure/db/connection.py` | `get_connection()` — reads `AH2_DATABASE_URL` (a Key Vault reference, resolved by the platform), retries transient connection failures |
+| `src/infrastructure/db/raw_source_events_repo.py` | `insert_if_new()` — the idempotency boundary (`ON CONFLICT (data_source, source_record_id) DO NOTHING`) |
+| `src/infrastructure/db/evidence_repo.py`, `audit_events_repo.py` | Insert helpers for the other two tables in the chain |
+| `src/application/yahoo_ingestion_service.py` | Orchestration: fetch → for each article, persist idempotently → build `DATA_RECEIVED` `AH2Event` |
+| `src/shared/retry.py` | Small retry-with-backoff helper, used for both the HTTP fetch and the DB connection |
+| `src/function_app.py` (updated) | New `AH2YahooFinanceTimer` function; existing consumer's success log now reports the actual `event_type` received instead of a hardcoded "foundation test" string |
+| `src/requirements.txt` (updated) | Added `httpx` and `psycopg2-binary` |
+| `tests/test_yahoo_finance_client.py`, `tests/test_yahoo_ingestion_service.py` | 34 new tests (see below) |
+| `db/set_db_secret.ps1`, `db/verify_db_secret.ps1` | Write/verify the DB connection string into Key Vault without ever displaying or transmitting it to Claude |
+| `db/verify_yahoo_ingestion.py` | Live verification: row counts + correlation-ID trace spot-check |
+| `redeploy.ps1` | Consolidated, reusable redeploy script (vendor deps → rebuild zip → upload → sync → restart), replacing the ad-hoc multi-step sequence used in STEP 4B |
+
+### Design decisions
+
+- **Watchlist:** used AH1's `SEED_WATCHLIST` (20 tickers) rather than the full production `SENTIMENT_WATCHLIST` (~89 tickers) — keeps this first migration's data volume easy to verify end-to-end; `SEED_WATCHLIST` is itself an AH1-proven, intentionally-curated list (used there for cold-start scenarios), not an arbitrary invention.
+- **`raw_data_ref`:** since headlines are small and there's no raw-content blob archive in scope for this step, `raw_data_ref` is a descriptive reference string (`yahoo_rss:{ticker}:{guid}`), not a blob pointer — the actual parsed content lives in `evidence.structured_fields`. Flagged as an open item below.
+- **One correlation_id per article, not per run:** each headline is the start of its own potential downstream chain (per `EVENT_CONTRACT.md` §8), so each gets a fresh `correlation_id`, not a single shared one for the whole timer invocation.
+- **Idempotency boundary is `raw_source_events_repo.insert_if_new()`:** if it reports a duplicate, the article's evidence/audit_events/DATA_RECEIVED are never created — verified both in unit tests and live (see below).
+- **Audit payload discipline (STEP 6A PM decision):** `audit_events.payload` holds only `data_source`, `ticker`, `guid`, `title` — the full article description/text is not duplicated there, only in `evidence.structured_fields`.
+- **Secrets:** `ah2-dev-kv` (empty since STEP 4A) now holds its first real secret, `ah2-database-url`. The Function App's `AH2_DATABASE_URL` app setting is a Key Vault reference (`@Microsoft.KeyVault(SecretUri=...)`), resolved automatically by the platform into a real environment variable — no code in this repo ever handles the raw password, and Claude never saw it at any point.
+- **Existing consumer updated, not duplicated:** `AH2FoundationQueueConsumer` already validates any `AH2Event` generically; only its *log message* was updated to report the actual `event_type` (previously hardcoded to "foundation test event"), since both the STEP 4B test event and STEP 7B's `DATA_RECEIVED` events flow through the same queue.
+
+### RBAC added for STEP 7B (Key Vault)
+
+| Role | Principal | Scope | Role assignment name (GUID) |
+|---|---|---|---|
+| Key Vault Secrets Officer | Kamil's AAD identity | `ah2-dev-kv` | `a1b2c3d4-e5f6-4091-9a2b-3c4d5e6f8d01` |
+| Key Vault Secrets User | `ah2-dev-func` managed identity | `ah2-dev-kv` | `a1b2c3d4-e5f6-4092-9a2b-3c4d5e6f8d02` |
+
+Both confirmed via `role_assignment_list`. A separate, **temporary** grant (Storage Blob Data Contributor on the `deploy` container, for Kamil to upload the deployment zip) was added and then revoked again after deployment, matching the STEP 4B/5A pattern.
+
+### Test results
+
+**26 new tests, all passing** (16 in `test_yahoo_finance_client.py` + 10 in `test_yahoo_ingestion_service.py`), part of the full suite — **73/73 passing overall** including all prior-step tests:
+
+- `test_yahoo_finance_client.py` (16 tests) — RSS parsing, HTML-stripping, title+description combination, `pubDate` preservation, deterministic `source_record_id`, 404 handling, malformed XML, missing `<channel>`, missing/blank title, guid fallback (deterministic hash), missing/unparseable `pubDate`, ticker uppercasing
+- `test_yahoo_ingestion_service.py` (10 tests) — new-article full persistence chain, duplicate handling (no evidence/audit/event created), two-run duplicate simulation, correlation-ID identity across all three tables, timestamp/provenance preservation (source `published_at` vs. row `created_at` kept distinct), audit payload contains only structured fields (not the full description), well-formed `AH2Event` round-trip, unexpected-error handling (counted, not raised), independent correlation IDs per article, connection always closed
+
+### Deployment — two new bugs found and fixed
+
+1. **`func.Out[list]` type annotation rejected.** The Python worker's function indexer requires a specific type for Service Bus output bindings; a bare `list` annotation failed with `FunctionLoadError`. Tried `func.Out[List[str]]` next — also rejected, this time with `TypeError: issubclass() arg 1 must be a class` deep in the worker's `check_output_type_annotation`, because that function calls `issubclass(pytype, (str, bytes))` and a parameterized generic isn't a class. **Fix:** the annotation stays `func.Out[str]` even for a "many" binding — `cardinality="many"` on the `@app.service_bus_queue_output(...)` decorator is what actually enables setting a list of messages at runtime; the type hint describes the *item* type, not the collection.
+2. **`az resource invoke-action ... syncfunctiontriggers` intermittently returned `Bad Request`** immediately after a blob upload, then succeeded on retry moments later — treated as a timing/propagation issue (upload → sync needing a brief gap), not a code bug; `redeploy.ps1` doesn't currently add a delay for this, so a retry may occasionally be needed.
+
+Once both were fixed, deployment succeeded cleanly and repeatably.
+
+### Live Azure verification
+
+- **Timer runs, host initializes:** `az functionapp function list` shows all three functions (`AH2FoundationTimer`, `AH2FoundationQueueConsumer`, `AH2YahooFinanceTimer`), enabled, Python.
+- **Yahoo data fetched:** `AppTraces` shows real `GET https://feeds.finance.yahoo.com/rss/2.0/headline?s=...` calls returning `200 OK` for every watchlist ticker.
+- **First run:** `AH2 Yahoo Finance ingestion run complete: new=359 duplicate=0 error=0`.
+- **Rows confirmed in all three tables** via `db/verify_yahoo_ingestion.py` against the live database: 359 in `raw_source_events` (`data_source='yahoo_finance'`), 359 in `evidence` (`evidence_type='news_headline'`), 359 in `audit_events` (`event_type='DATA_RECEIVED'`, `payload->>'data_source'='yahoo_finance'`) — all matching exactly.
+- **DATA_RECEIVED reaches the consumer:** `AppTraces` shows `AH2FoundationQueueConsumer` logging `"AH2 DATA_RECEIVED event received and verified"` for the same `correlation_id`/`event_id` pairs found in the database spot-check.
+- **Correlation ID traced end-to-end:** one specific row (`raw_source_events.id=359`, `event_id=4f578fdc-bfab-4c1a-a902-e14f4217a1df`, `correlation_id=d2807280-9dd6-4e40-9144-eda9dedd787f`) was confirmed present with the *same* `event_id`/`correlation_id` in its matching `evidence` row, its matching `audit_events` row, and the Service Bus consumer's log line — publisher through consumer, through the database, through the durable audit record.
+- **Timestamp/provenance preserved:** the same spot-checked row shows `received_at` (the source's own `pubDate`, `2026-09-11 13:25:00+00:00`) distinct from `created_at` (when the row was actually inserted, `2026-09-12 16:49:23+00:00`) — proving the source timestamp isn't overwritten by the ingestion time.
+- **Idempotency/duplicate-run verification:** across five subsequent runs (both scheduled 15-minute ticks and two forced restarts), results were `new=0 dup=358`, `new=1 dup=356`, `new=0 dup=357`, `new=2 dup=355`, `new=0 dup=356` — zero errors, and the vast majority of each run's headlines correctly recognized as duplicates. Total database rows after all runs: exactly 365 (359 + genuinely new headlines across the later runs) — not 359×6. Independently corroborated by the `raw_source_events` identity-column sequence: the 365th real row carries surrogate key `id=3629`, meaning roughly 3,264 duplicate insert *attempts* were correctly rejected without creating extra rows.
+
+### Warnings / open items
+
+- **`raw_data_ref` is a descriptive string, not a blob pointer** (see Design decisions above) — reasonable for small RSS headlines, but the pattern won't scale to sources with large raw payloads (e.g. full articles, PDFs) without adding real blob archival, which is out of scope here.
+- **`syncfunctiontriggers` timing flakiness** (see Deployment bugs above) — worth hardening `redeploy.ps1` with a short delay or automatic retry in a future step.
+- **Kudu/SCM remains unusable** for this Function App (per STEP 4B) — all troubleshooting here was done via Application Insights/Log Analytics and the Portal's "Diagnose and solve problems" UI, consistent with that finding.
+- **Deployment is still fully manual** (`redeploy.ps1`, run by Kamil) — no CI/CD yet, unchanged from STEP 4B's noted gap.
+
+**STEP 7B is complete: Yahoo Finance ingestion is live on `ah2-dev-func`, writing real data into `alphahound2`, with idempotency, correlation-ID tracing, and timestamp/provenance preservation all verified against the running system — not just unit tests. No AH1 changes, no new Azure resources beyond what STEP 4A/6 already provisioned, no paid subscriptions. STEP 8 is not authorized until Kamil explicitly approves it.**
